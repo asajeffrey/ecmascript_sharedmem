@@ -80,12 +80,14 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 * no data dependencies
 
 **Definition**: a *thread execution* is a 4-tuple (*E*, ─po→, ─dd→, λ) where:
+
 * *E* a set of *events*,
 * ─po→ ⊆ (*E* × *E*) is a total *program order*,
 * ─dd→ ⊆ ─po→ is a *data dependency* relation, and
 * λ : (*E* → Σ) is a *labelling*.
 
 We lift up definitions from labels to events:
+
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
 * an *atomic event* is an event *e* where λ(*e*) is an atomic action,
@@ -95,3 +97,72 @@ We lift up definitions from labels to events:
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
 a lot like non-interference.]
+
+## Memory model
+
+First, we observe that the program order is not observable, for example there is no
+context which can distinguish `m[0] = 1; m[1] = 2;` from ` m[1] = 2; m[0] = 1;`.
+Instead we are interested in a smaller relation, the *preserved program order*.
+
+Note that most non-atomic events can be reordered, with the exception of the
+last write before a release. For example, we can only swap the first two writes
+in:
+```
+  m[0] = 1; m[0] = 2; m[0] = 3; release m[1] = 1;
+```
+We will call such a write event a `released write'.
+
+**Definition**: In a thread execution, the *preserved program order* is the relation
+where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
+
+* *d* ─dd→ *e*,
+* *d* is an atomic read, and *e* is a read,
+* *d* is a write, and *e* is an atomic read, or
+* *d* is a write, and *e* is an overlapping released write,
+
+where we define a write event *e* to be a *released write* whenever
+there is some non-overlapping atomic write *c* such that *e* ─po→ *c*,
+and there is no *e ─po→ d ─po⟶ c* where *d* overlaps *e*. ∎
+
+Now, given a thread execution for each thread in the program,
+we would like to know when they can be combined to form a program
+execution. A *candidate execution* is one where we combine together
+the individual thread executions. For example a candidate execution of the TAR pit is:
+
+>  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)
+>  (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
+
+and a candidate execution of the TAR pit companion is:
+
+>  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)
+>  (`R m[0] → 1`)
+>  (`W m[1] → 1`)
+
+**Definition** Given *n* thread executions define a *candidate program execution* to be
+(*E*, ─ppo→, ─rf→) where:
+
+* *E* = *E*₁ ∪ ⋯ ∪ *E*ₙ,
+* ─ppo→ = ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ, and
+* ─rf→ ⊆ (*E* × *E*),
+
+such that if *c* ─rf→ *e* then:
+
+* *e* is a read, and *c* is a matching write,
+* we do not have *e* ─hb→ *c*, and
+* there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, 
+
+where we define the *happens before* relation ─hb→ to
+be the transitive closure of (─ppo→ ∪ ─rf→). ∎
+
+Not all candidate program executions are valid, however, since ─hb⟶ may be cyclic.
+For example in the TAR pit candidate execution, we have:
+
+>  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
+
+but in the TAR pit companion, the cycle is broken:
+
+>  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
+
+**Definition** A *program execution* is a candidate program execution where
+  ─hb→ is a partial order.
+
