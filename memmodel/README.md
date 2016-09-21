@@ -75,9 +75,9 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 
 **Definition**: a *thread execution* is a 4-tuple (*E*, ─po→, ─dd→, λ) where:
 * *E* a set of *events*,
-* ─po→ ⊆ (E × E) is a total *program order*,
-* ─dd→ ⊆ (E × E) is a *data dependency* relation, and
-* λ : (E → Σ) is a *labelling*.
+* ─po→ ⊆ (*E* × *E*) is a total *program order*,
+* ─dd→ ⊆ (*E* × *E*) is a *data dependency* relation, and
+* λ : (*E* → Σ) is a *labelling*.
 
 We lift up read, write and atomic events from the label:
 * a *read event* is an event *e* where λ(*e*) is a read action,
