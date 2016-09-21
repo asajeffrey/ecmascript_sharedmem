@@ -49,11 +49,17 @@ The model is parameterized on an alphabet, with (possibly overlapping) subsets o
 * `W m[i] ⇐ v` (an atomic write action)
 * `RW m[i] ⇐ v ⇒ w (an atomic read write action)
 
-**Definition**: a *memory alphabet* is a 4-tuple (Σ, *Rd*, *Wr*, *At*) where:
+Each memory alphabet comes with a notion of when a read *matches* a write
+(in examples, when they share a memory location and a value) and when
+two writes overlap (in examples, when they share a memory location).
+
+**Definition**: a *memory alphabet* is a 6-tuple (Σ, *Rd*, *Wr*, *At*, *Mt*, *Ov*) where:
 * Σ is a set of *actions*,
 * *Rd* ⊆ Σ is a subset of *read actions*,
-* *Wr* ⊆ Σ is a subset of *write actions*, and
-* *At* ⊆ Σ is a subset of *atomic actions*. ∎
+* *Wr* ⊆ Σ is a subset of *write actions*,
+* *At* ⊆ Σ is a subset of *atomic actions*,
+* *Mt* ⊆ (*Rd* × *Wr*), is the *match* relation, and
+* *Ov* ⊆ (*Wr* × *Wr*), is the *overlap* relation. ∎
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
@@ -79,10 +85,12 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 * ─dd→ ⊆ ─po→ is a *data dependency* relation, and
 * λ : (*E* → Σ) is a *labelling*.
 
-We lift up read, write and atomic events from the label:
+We lift up definitions from labels to events:
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
-* an *atomic event* is an event *e* where λ(*e*) is an atomic action. ∎
+* an *atomic event* is an event *e* where λ(*e*) is an atomic action,
+* a write event *d* matches a read event *e* when λ(*d*) matches λ(*e*), and
+* a write event *d* overlaps a write event *e* when λ(*d*) overlaps λ(*e*). ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
