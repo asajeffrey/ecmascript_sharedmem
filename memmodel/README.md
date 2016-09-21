@@ -49,11 +49,11 @@ The model is parameterized on an alphabet, with (possibly overlapping) subsets o
 * `W m[i] ⇐ v` (an atomic write action)
 * `RW m[i] ⇐ v ⇒ w (an atomic read write action)
 
-**Definition**: a *memory alphabet* is a 4-tuple (Σ, *R*, *W*, *A*) where:
+**Definition**: a *memory alphabet* is a 4-tuple (Σ, *Rd*, *Wr*, *At*) where:
 * Σ is a set of *actions*,
-* *R* ⊆ Σ is a subset of *read actions*,
-* *W* ⊆ Σ is a subset of *write actions*, and
-* *A* ⊆ Σ is a subset of *atomic actions*. ∎
+* *Rd* ⊆ Σ is a subset of *read actions*,
+* *Wr* ⊆ Σ is a subset of *write actions*, and
+* *At* ⊆ Σ is a subset of *atomic actions*. ∎
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
@@ -78,6 +78,7 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 * ─po→ ⊆ (E × E) is a total *program order*,
 * ─dd→ ⊆ (E × E) is a *data dependency* relation, and
 * λ : (E → Σ) is a *labelling*.
+
 We lift up read, write and atomic events from the label:
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
