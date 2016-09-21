@@ -84,6 +84,6 @@ We lift up read, write and atomic events from the label:
 * a *write event* is an event *e* where λ(*e*) is a write action,
 * an *atomic event* is an event *e* where λ(*e*) is an atomic action. ∎
 
-Note that the host language has a lot of freedom in defining data dependency.
+Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
 a lot like non-interference.]
