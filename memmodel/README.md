@@ -47,7 +47,7 @@ The model is parameterized on an alphabet, with (possibly overlapping) subsets o
 * `W m[i] ← v` (a write action)
 * `R m[i] ⇒ v` (an atomic read action)
 * `W m[i] ⇐ v` (an atomic write action)
-* `RW m[i] ⇐ v ⇒ w (an atomic read write action)
+* `RW m[i] ⇐ v ⇒ w` (an atomic read write action)
 
 Each memory alphabet comes with a notion of when a read *matches* a write
 (in examples, when they share a memory location and a value) and when
