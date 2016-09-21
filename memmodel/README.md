@@ -129,14 +129,14 @@ we would like to know when they can be combined to form a program
 execution. A *candidate execution* is one where we combine together
 the individual thread executions. For example a candidate execution of the TAR pit is:
 
->  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)
->  (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
+>  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)  
+>  (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)  
 
 and a candidate execution of the TAR pit companion is:
 
->  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)
->  (`R m[0] → 1`)
->  (`W m[1] → 1`)
+>  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)  
+>  (`R m[0] → 1`)  
+>  (`W m[1] → 1`)  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
 (*E*, ─ppo→, ─rf→) where:
