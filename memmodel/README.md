@@ -154,7 +154,7 @@ such that if *c* ─rf→ *e* then:
 where we define the *happens before* relation ─hb→ to
 be the transitive closure of (─ppo→ ∪ ─rf→). ∎
 
-Not all candidate program executions are valid, however, since ─hb⟶ may be cyclic.
+Not all candidate program executions are valid, however, since ─hb→ may be cyclic.
 For example in the TAR pit candidate execution, we have:
 
 >  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
