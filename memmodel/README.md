@@ -151,10 +151,12 @@ such that if *c* ─rf→ *e* then:
 * we do not have *e* ─hb→ *c*, and
 * there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, 
 
-where we define the *happens before* relation ─hb→ to
-be the transitive closure of (─ppo→ ∪ ─rf→). ∎
+where we define:
 
-Not all candidate program executions are valid, however, since ─hb→ may be cyclic.
+* the *atomic reads from* relation ─arf→ is (─rf→ ∩ (*At* × *At*)), and
+* the *happens before* relation ─hb→ is (─ppo→ ∪ ─arf→)*. ∎
+
+Not all candidate program executions are valid, however, since there may be cycles in (─ppo→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
 
 >  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
@@ -164,5 +166,5 @@ but in the TAR pit companion, the cycle is broken:
 >  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
 
 **Definition** A *program execution* is a candidate program execution where
-  ─hb→ is a partial order.
+  (─ppo⟶ ∪ ─rf→)* is a partial order. ∎
 
