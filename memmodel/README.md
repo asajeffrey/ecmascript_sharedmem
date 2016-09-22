@@ -6,7 +6,7 @@ This README contains notes summarizing the memory model.
 
 ## Goals
 
-* Can be compiled to and from LLVM without adding fences to relaxed reads and writes.
+* Can be compiled to and from existing memory models (such as x86-TSO, ARM, LLVM or C/C++11) without adding fences to non-atomic reads and writes.
 * Supports compiler optimizations such as independent read/write reordering, roach motel and dead code elimination.
 * Allows inductive reasoning (e.g. no thin-air reads) and satisfies the SC-DRF theorem.
 * No use of undefined behavior or undefined values.
