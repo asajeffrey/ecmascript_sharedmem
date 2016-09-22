@@ -62,12 +62,12 @@ Each memory alphabet comes with a notion of when a read *matches* a write
 (in examples, when they share a memory location and a value) and when
 two writes overlap (in examples, when they share a memory location).
 
-**Definition**: a *memory alphabet* is a 6-tuple (Σ, *Rd*, *Wr*, *Mt*, *Ov*) where:
+**Definition**: a *memory alphabet* is a 5-tuple (Σ, *R*, *W*, *M*, *O*) where:
 * Σ is a set of *actions*,
-* *Rd* ⊆ Σ is a subset of *read actions*,
-* *Wr* ⊆ Σ is a subset of *write actions*,
-* *Mt* ⊆ (*Rd* × *Wr*), is the *match* relation, and
-* *Ov* ⊆ (*Wr* × *Wr*), is the *overlap* relation. ∎
+* *R* ⊆ Σ is a subset of *read actions*,
+* *W* ⊆ Σ is a subset of *write actions*,
+* *M* ⊆ (*R* × *W*), is the *match* relation, and
+* *O* ⊆ (*W* × *W*), is the *overlap* relation. ∎
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
