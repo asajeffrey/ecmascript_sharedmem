@@ -13,6 +13,17 @@ This README contains notes summarizing the memory model.
 * Requires as few changes as possible to the ECMAScript specification.
 * Contains as little new work as possible.
 
+## Preliminaries
+
+A relation ─R→ is *total* whenever, for any *d* and *e*, either
+*d* ─R→ *e*, or *e* ─R→ *d*, or *d* = *e*.
+
+The inverse of a relation ─R→ is the relation ←R─ defined as
+*d* ←R─ *e* whenever *e* ─R→ *d*.
+
+The kernel of a relation ─R→ is the relation ←R→ defined to be
+*d* ←R→ *e* whenever *d* ←R─ *e* ─R→ *d*.
+
 ## Host language requirements
 
 The host language of interest is ECMAScript, but the model is defined for
