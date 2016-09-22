@@ -143,14 +143,17 @@ and a candidate execution of the TAR pit companion is:
 (*E*, ─ppo→, ─rf→) where:
 
 * *E* = *E*₁ ∪ ⋯ ∪ *E*ₙ,
+* ─po→ = ─po→₁ ∪ ⋯ ∪ ─po→ₙ, and
 * ─ppo→ = ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ, and
 * ─rf→ ⊆ (*E* × *E*),
 
 such that if *c* ─rf→ *e* then:
 
 * *e* is a read, and *c* is a matching write,
-* we do not have *e* ─hb→ *c*, and
-* there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, 
+* we do not have *e* ─hb→ *c*,
+* we do not have *e* ─po→ *c*,
+* there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, and
+* there is no *c* ─po→ *d* ─po→ *e* where *d* overlaps *e*, 
 
 where we define:
 
