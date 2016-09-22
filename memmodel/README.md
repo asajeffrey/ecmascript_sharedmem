@@ -140,38 +140,37 @@ and a candidate execution of the TAR pit companion is:
 >  (`W m[1] → 1`)  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
-(*E*, ─ppo→, ─rf→) where:
+(─rf→, ─sc→) where:
 
-* *E* = *E*₁ ∪ ⋯ ∪ *E*ₙ,
-* ─dd→ = ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ, and
-* ─po→ = ─po→₁ ∪ ⋯ ∪ ─po→ₙ, and
-* ─ppo→ = ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ, and
-* ─rf→ ⊆ (*E* × *E*),
+* ─rf→ is a relation between write events and matching reads,
+* ─sc→ is a total order on atomic events,
 
 such that if *c* ─rf→ *e* then:
 
-* *e* is a read, and *c* is a matching write,
 * we do not have *e* ─hb→ *c*,
-* we do not have *e* ─po→ *c*,
+* we do not have *e* ─po→*ᵢ* *c*,
 * there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, and
-* there is no *c* ─po→ *d* ─po→ *e* where *d* overlaps *e*, 
+* there is no *c* ─po→*ᵢ* *d* ─po→*ᵢ* *e* where *d* overlaps *e*, 
 
 where we define:
 
-* the *synchronizes with* relation ─sw→ is (─rf→ ∩ (*At* × *At*)), and
-* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sw→)*. ∎
+* *E* is *E*₁ ∪ ⋯ ∪ *Eₙ* (wlog we assume the *Eᵢ* are disjoint),
+* ─dd→ is ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ,
+* ─po→ is ─po→₁ ∪ ⋯ ∪ ─po→ₙ,
+* ─ppo→ is ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ,
+* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sc→)*. ∎
 
-Not all candidate program executions are valid, however, since there may be cycles in (─ppo→ ∪ ─rf→).
+Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
 
->  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)
+>  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─hb→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─hb→ (`W m[1] → 1`)
 
 but in the TAR pit companion, the cycle is broken:
 
->  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
+>  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─hb→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
 
 **Definition** A *program execution* is a candidate program execution where
-  (─ppo⟶ ∪ ─rf→)* is a partial order. ∎
+  (─hb⟶ ∪ ─rf→)* is a partial order. ∎
 
 ## Compilation to and from C/C++ atomics
 
