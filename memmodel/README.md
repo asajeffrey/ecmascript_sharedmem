@@ -53,31 +53,29 @@ and the ‘TAR pit companion’ program (which can result in `x == m[0] == m[1] 
 ```
 
 The model is parameterized on an alphabet, with (possibly overlapping) subsets of *read*,
-*write*, and *atomic* actions. In examples, the alphabet consists of:
+and *write* actions. In examples, the alphabet consists of:
 
-* `R m[i] → v` (a read action)
-* `W m[i] ← v` (a write action)
-* `R m[i] ⇒ v` (an atomic read action)
-* `W m[i] ⇐ v` (an atomic write action)
-* `RW m[i] ⇐ v ⇒ w` (an atomic read write action)
+* `R m[i] = v` (a read action)
+* `W m[i] = v` (a write action)
 
 Each memory alphabet comes with a notion of when a read *matches* a write
 (in examples, when they share a memory location and a value) and when
 two writes overlap (in examples, when they share a memory location).
 
-**Definition**: a *memory alphabet* is a 6-tuple (Σ, *Rd*, *Wr*, *At*, *Mt*, *Ov*) where:
+**Definition**: a *memory alphabet* is a 6-tuple (Σ, *Rd*, *Wr*, *Mt*, *Ov*) where:
 * Σ is a set of *actions*,
 * *Rd* ⊆ Σ is a subset of *read actions*,
 * *Wr* ⊆ Σ is a subset of *write actions*,
-* *At* ⊆ Σ is a subset of *atomic actions*,
 * *Mt* ⊆ (*Rd* × *Wr*), is the *match* relation, and
 * *Ov* ⊆ (*Wr* × *Wr*), is the *overlap* relation. ∎
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
-participates in, together with a data dependency relation on those
-events.  We write *d* ─po→ *e* when event *d* precedes event *d* in
-program order, and *d* ─dd→ *e* when event *e* depends on event *d*.
+participates in, together with a notion of which events have to be
+executed atomically together, and a data dependency relation on those
+events.  We write *d* ─po→ *e* when event *d* precedes event *e* in
+program order, *d* ←po→ *e* when *d* and *e* must be executed as one atom,
+and *d* ─dd→ *e* when event *e* depends on event *d*.
 In examples, we will often use the event labels to stand in for the events
 (with subscripts if necessary to disambiguate).
 
@@ -94,21 +92,26 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 **Definition**: a *thread execution* is a 4-tuple (*E*, ─po→, ─dd→, λ) where:
 
 * *E* a set of *events*,
-* ─po→ ⊆ (*E* × *E*) is a total *program order*,
-* ─dd→ ⊆ ─po→ is a *data dependency* relation, and
-* λ : (*E* → Σ) is a *labelling*.
+* ─po→ is a total, transitive relation on events (po stands for *program order*),
+* ─dd→ is a relation from write events to read events,
+* λ : (*E* → Σ) is a *labelling*, such that
+* if d ─dd→ e then d ─po→ e and not e ─po→ d.
 
-We lift up definitions from labels to events:
+Define:
 
+* an *atomic event* is an event *e* where *e* ←po→ *e*,
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
-* an *atomic event* is an event *e* where λ(*e*) is an atomic action,
 * a write event *d* matches a read event *e* when λ(*d*) matches λ(*e*), and
 * a write event *d* overlaps a write event *e* when λ(*d*) overlaps λ(*e*). ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
 a lot like non-interference.]
+
+In practice, languages will place limits on which labels can be made atomic,
+for example allowing `W m[i] = v` ←po→ `W m[j] = v` only when `i == j+1` or `j == i+1`.
+[We should revisit this in the ECMAScript memory alphabet.]
 
 ## Memory model
 
@@ -133,7 +136,7 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 * *d* is a write, and *e* is an overlapping released write,
 
 where we define a write event *e* to be a *released write* whenever
-there is some non-overlapping atomic write *c* such that *e* ─po→ *c*,
+there is some atomic write *c* such that *e* ─po→ *c*,
 and there is no *e ─po→ d ─po→ c* where *d* overlaps *e*. ∎
 
 Now, given a thread execution for each thread in the program,
@@ -154,14 +157,14 @@ and a candidate execution of the TAR pit companion is:
 (─rf→, ─sc→) where:
 
 * ─rf→ is a relation between write events and matching reads,
-* ─sc→ is a total order on atomic events,
+* ─sc→ is a total transitive relation on atomic events with kernel ←po→,
 
 such that if *c* ─rf→ *e* then:
 
 * we do not have *e* ─hb→ *c*,
-* we do not have *e* ─po→*ᵢ* *c*,
+* we do not have *e* ─po→ *c*,
 * there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, and
-* there is no *c* ─po→*ᵢ* *d* ─po→*ᵢ* *e* where *d* overlaps *e*, 
+* there is no *c* ─po→ *d* ─po→ *e* where *d* overlaps *e*,
 
 where we define:
 
@@ -216,7 +219,8 @@ access in the original program will become sequentially consistent.
 Still to do:
 
 * Define the ECMAScript alphabet.
+* Define the restrictions on ←po→ for ECMAScript.
 * Give semantics for the shared arrays API in terms of events.
 * Give semantics for other inter-thread communication mechanisms such as message channels.
-* Allow non-aligned access, and varying word sizes.
+* Give examples of non-aligned access, and varying word sizes.
 * Formalize the non-interference property for dd, and show SC-DRF.
