@@ -123,7 +123,7 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 
 where we define a write event *e* to be a *released write* whenever
 there is some non-overlapping atomic write *c* such that *e* ─po→ *c*,
-and there is no *e ─po→ d ─po⟶ c* where *d* overlaps *e*. ∎
+and there is no *e ─po→ d ─po→ c* where *d* overlaps *e*. ∎
 
 Now, given a thread execution for each thread in the program,
 we would like to know when they can be combined to form a program
