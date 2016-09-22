@@ -21,10 +21,10 @@ any language which can provide appropriate executions consisting of
 
 In examples, we use a simple imperative language with a shared array `m`, and write:
 
-* `r = m[i];` for a relaxed read,
-* `m[i] = e;` for a relaxed write,
-* `acquire r = m[i];` for an acquiring read,
-* `release m[i] = e;` for a releasing write, and
+* `r = m[i];` for a non-atomic read,
+* `m[i] = e;` for a non-atomic write,
+* `atomic r = m[i];` for an atomic read,
+* `atomic m[i] = e;` for an atomic write, and
 * `atomic m[i] = op(r = m[i]);` for an atomic update such as increment or CAS.
 * `T₁ ∥ ⋯ ∥ Tₙ` for the parallel composition of `n` threads `T₁` to `Tₘ`.
 
@@ -172,6 +172,34 @@ but in the TAR pit companion, the cycle is broken:
 
 **Definition** A *program execution* is a candidate program execution where
   (─ppo⟶ ∪ ─rf→)* is a partial order. ∎
+
+## Compilation to and from C/C++ atomics
+
+The mapping from ECMAScript accesses to C/C++ accesses is:
+
+* ECMAScript non-atomic to C/C++ relaxed
+* ECMAScript atomic to C/C++ sequentially consistent
+
+The mapping from C/C++ accesses to ECMAScript accesses is:
+
+* C/C++ non-atomic to ECMAScript non-atomic
+* C/C++ relaxed to ECMAScript atomic
+* C/C++ acquire/consume/release to ECMAScript atomic
+* C/C++ sequentially consistent to ECMAScript atomic
+
+**Note**: C/C++ relaxed is mapped to ECMAScript atomic because relaxed
+accesses are required to be per-location sequentially consistent, and
+ECMAScript non-atomics are not.
+
+A common execution path is for a C program to be compiled to asm.js,
+then executed in a run-time environment implemented in C. In this
+case, a non-atomic access in the original program will be executed as
+relaxed, but any other access in the original program will be executed
+as sequentially consistent.
+
+In the (hopefully unlikely) case that a program is
+compiled from C to ECMAScript to C to ECMAScript to C, every memory
+access in the original program will become sequentially consistent.
 
 ## TODO
 
