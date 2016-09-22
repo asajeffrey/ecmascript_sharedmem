@@ -66,7 +66,7 @@ two writes overlap (in examples, when they share a memory location).
 * Σ is a set of *actions*,
 * *R* ⊆ Σ is a subset of *read actions*,
 * *W* ⊆ Σ is a subset of *write actions*,
-* *M* ⊆ (*R* × *W*), is the *match* relation, and
+* *M* ⊆ (*W* × *R*), is the *match* relation, and
 * *O* ⊆ (*W* × *W*), is the *overlap* relation. ∎
 
 We are mostly treating thread executions as black boxes, but we are
