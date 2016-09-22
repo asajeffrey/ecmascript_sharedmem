@@ -206,5 +206,6 @@ Still to do:
 
 * Define the ECMAScript alphabet.
 * Give semantics for the shared arrays API in terms of events.
+* Give semantics for other inter-thread communication mechanisms such as message channels.
 * Allow non-aligned access, and varying word sizes.
 * Formalize the non-interference property for dd, and show SC-DRF.
