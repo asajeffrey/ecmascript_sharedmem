@@ -118,7 +118,7 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 
 * *d* ─dd→ *e*,
 * *d* is an atomic read, and *e* is a read,
-* *d* is a write, and *e* is an atomic read, or
+* *d* is a write, and *e* is an atomic write, or
 * *d* is a write, and *e* is an overlapping released write,
 
 where we define a write event *e* to be a *released write* whenever
