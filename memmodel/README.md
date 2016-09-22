@@ -173,3 +173,11 @@ but in the TAR pit companion, the cycle is broken:
 **Definition** A *program execution* is a candidate program execution where
   (─ppo⟶ ∪ ─rf→)* is a partial order. ∎
 
+## TODO
+
+Still to do:
+
+* Define the ECMAScript alphabet.
+* Give semantics for the shared arrays API in terms of events.
+* Allow non-aligned access, and varying word sizes.
+* Formalize the non-interference property for dd, and show SC-DRF.
