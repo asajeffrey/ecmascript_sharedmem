@@ -143,6 +143,7 @@ and a candidate execution of the TAR pit companion is:
 (*E*, ─ppo→, ─rf→) where:
 
 * *E* = *E*₁ ∪ ⋯ ∪ *E*ₙ,
+* ─dd→ = ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ, and
 * ─po→ = ─po→₁ ∪ ⋯ ∪ ─po→ₙ, and
 * ─ppo→ = ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ, and
 * ─rf→ ⊆ (*E* × *E*),
