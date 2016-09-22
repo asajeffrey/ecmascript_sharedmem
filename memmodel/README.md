@@ -36,7 +36,7 @@ the ‘TAR pit’ program (which should not result in `x == m[0] == m[1] == 1`) 
 ```
    m[0] = m[1];  ∥  x = m[0]; m[1] = x;
 ```
-and the ‘TAR pit companion’ program (which could result in `x == m[0] == m[1] == 1`) is:
+and the ‘TAR pit companion’ program (which can result in `x == m[0] == m[1] == 1`) is:
 ```
    m[0] = m[1];  ∥  x = m[0]; m[1] = 1;
 ```
