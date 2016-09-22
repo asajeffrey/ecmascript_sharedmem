@@ -15,10 +15,11 @@ This README contains notes summarizing the memory model.
 
 ## Host language requirements
 
-The host language of interest is ECMAScript, but we treat host
-language executions as black boxes.
+The host language of interest is ECMAScript, but the model is defined for
+any language which can provide appropriate executions consisting of
+*events* and *data dependencies*.
 
-In examples, we assume a shared array `m`, and write:
+In examples, we use a simple imperative language with a shared array `m`, and write:
 
 * `r = m[i];` for a relaxed read,
 * `m[i] = e;` for a relaxed write,
