@@ -153,8 +153,8 @@ such that if *c* ─rf→ *e* then:
 
 where we define:
 
-* the *atomic reads from* relation ─arf→ is (─rf→ ∩ (*At* × *At*)), and
-* the *happens before* relation ─hb→ is (─ppo→ ∪ ─arf→)*. ∎
+* the *atomic reads from* relation ─sw→ is (─rf→ ∩ (*At* × *At*)), and
+* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sw→)*. ∎
 
 Not all candidate program executions are valid, however, since there may be cycles in (─ppo→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
