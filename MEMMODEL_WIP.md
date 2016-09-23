@@ -251,7 +251,7 @@ for small values, but locks for larger ones). For this reason, we only require
 * *thin-air-read-free*: (─hb⟶ ∪ ─rf→)* is a partial order, and
 * *per-size sequentially consistent*: ─mo→ is total on atomic events of the same size. ∎
 
-## Compilation to and from C/C++ atomics
+## Compilation to and from LLVM or C/C++ atomics
 
 The mapping from ECMAScript accesses to C/C++ accesses is:
 
@@ -265,7 +265,20 @@ The mapping from C/C++ accesses to ECMAScript accesses is:
 * C/C++ acquire/consume/release to ECMAScript atomic
 * C/C++ sequentially consistent to ECMAScript atomic
 
-**Note**: C/C++ relaxed is mapped to ECMAScript atomic because relaxed
+The mapping from ECMAScript accesses to LLVM accesses is:
+
+* ECMAScript non-atomic to LLVM unordered
+* ECMAScript atomic to LLVM sequentially consistent
+
+The mapping from LLVM accesses to ECMAScript accesses is:
+
+* LLVM non-atomic to ECMAScript non-atomic
+* LLVM unordered to ECMAScript non-atomic
+* LLVM monotonic to ECMAScript atomic
+* LLVM acquire/consume/release to ECMAScript atomic
+* LLVM sequentially consistent to ECMAScript atomic
+
+**Note**: C/C++ relaxed and LLVM monotonic are mapped to ECMAScript atomic because relaxed
 accesses are required to be per-location sequentially consistent, and
 ECMAScript non-atomics are not.
 
