@@ -100,6 +100,7 @@ and an execution of `x = m[0]; m[1] = 1;` has:
 Define:
 
 * an *atomic event* is an event *e* where *e* ←po→ *e*,
+* the *size* of an event *e* is the size of { *d* | *d* ←po→ *e* },
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
 * a write event *d* matches a read event *e* when λ(*d*) matches λ(*e*), and
@@ -157,7 +158,7 @@ and a candidate execution of the TAR pit companion is:
 (─rf→, ─sc→) where:
 
 * ─rf→ is a relation between write events and matching reads,
-* ─sc→ is a total transitive relation on atomic events with kernel ←po→,
+* ─sc→ is a transitive relation on atomic events with kernel ←po→,
 
 such that if *c* ─rf→ *e* then:
 
@@ -183,8 +184,10 @@ but in the TAR pit companion, the cycle is broken:
 
 >  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─hb→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
 
-**Definition** A *program execution* is a candidate program execution where
-  (─hb⟶ ∪ ─rf→)* is a partial order. ∎
+**Definition** A *program execution* is a candidate program execution satisfying:
+
+* *thin-air-read-free*: (─hb⟶ ∪ ─rf→)* is a partial order, and
+* *per-size sequentially consistent*: ─sc→ is total on atomic events of the same size. ∎
 
 ## Compilation to and from C/C++ atomics
 
