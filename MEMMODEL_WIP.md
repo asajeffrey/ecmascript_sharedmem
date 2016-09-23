@@ -195,6 +195,7 @@ such that if *c* ─rf→ *e* then:
 
 * we do not have *e* ─hb→ *c*,
 * we do not have *e* ─po→ *c*,
+* if *c* and *e* are atomic, then *c* ─mo→ *e*,
 * there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, and
 * there is no *c* ─po→ *d* ─po→ *e* where *d* overlaps *e*,
 
@@ -204,7 +205,8 @@ where we define:
 * ─dd→ is ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ,
 * ─po→ is ─po→₁ ∪ ⋯ ∪ ─po→ₙ,
 * ─ppo→ is ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ,
-* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sc→)*. ∎
+* the *synchronizes with* relation ─sw→ is ─rf⟶ restricted to atomic events, and
+* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sw→)*. ∎
 
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
