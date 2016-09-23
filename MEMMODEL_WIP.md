@@ -32,11 +32,11 @@ any language which can provide appropriate executions consisting of
 
 In examples, we use a simple imperative language with a shared array `m`, and write:
 
-* `r = m[i];` for a non-atomic read,
-* `m[i] = e;` for a non-atomic write,
-* `atomic r = m[i];` for an atomic read,
-* `atomic m[i] = e;` for an atomic write, and
-* `atomic m[i] = op(r = m[i]);` for an atomic update such as increment or CAS.
+* `m[i]` for a non-atomic read,
+* `m[i] = e` for a non-atomic write,
+* `m[i..j]` for an atomic read,
+* `m[i..j] = [eᵢ,⋯,eⱼ]` for an atomic write, and
+* `m[i..j] = op(m[i..j])` for an atomic update such as increment or CAS.
 * `T₁ ∥ ⋯ ∥ Tₙ` for the parallel composition of `n` threads `T₁` to `Tₘ`.
 
 For example, the ‘variable access reordering′ example (which could result in `r0 == 0` and `r1 == 1`) is:
@@ -77,16 +77,47 @@ events.  We write *d* ─po→ *e* when event *d* precedes event *e* in
 program order, *d* ←po→ *e* when *d* and *e* must be executed as one atom,
 and *d* ─dd→ *e* when event *e* depends on event *d*.
 In examples, we will often use the event labels to stand in for the events
-(with subscripts if necessary to disambiguate).
+(with subscripts if necessary to disambiguate), and write
+[*e*₁,⋯,*eₙ*] when *e*₁ ←po→ ⋯ ←po→ *eₙ*
 
 For example, an execution of `x = m[0]; m[1] = x;` has:
 
-* program order: (`R m[0] → 1`) ─po→ (`W m[1] → 1`) 
-* data dependency: (`R m[0] → 1`) ─dd→ (`W m[1] → 1`) 
+* program order: `R m[0] → 1` ─po→ `W m[1] → 1` 
+* data dependency: `R m[0] → 1` ─dd→ `W m[1] → 1` 
 
-and an execution of `x = m[0]; m[1] = 1;` has:
+an execution of `x = m[0]; m[1] = 1;` has:
 
-* program order: (`R m[0] → 1`) ─po→ (`W m[1] → 1`) 
+* program order: `R m[0] → 1` ─po→ `W m[1] → 1`
+* no data dependencies
+
+an execution of `r₀ = m[0]; r₁ = m[1];` has:
+
+* program order: `R m[0] → 1` ─po→ `R m[1] → 2` 
+* no data dependencies
+
+an execution of `[r₀] = m[0..0]; [r₁] = m[1..1];` has:
+
+* program order: [`R m[0] → 1`] ─po→ [`R m[1] → 2`] 
+* no data dependencies
+
+an execution of `[r₀,r₁] = m[0..1];` has:
+
+* program order: [`R m[0] → 1`,`R m[1] → 2`] 
+* no data dependencies
+
+an execution of `m[0] = 1; m[1] = 2;` has:
+
+* program order: `W m[0] → 1` ─po→ `W m[1] → 2` 
+* no data dependencies
+
+an execution of `m[0..0] = [1]; m[1..1] = [2];` has:
+
+* program order: [`W m[0] → 1`] ─po→ [`W m[1] → 2`] 
+* no data dependencies
+
+an execution of `m[0..1] = [1,2];` has:
+
+* program order: [`W m[0] → 1`,`W m[1] → 2`] 
 * no data dependencies
 
 **Definition**: a *thread execution* is a 4-tuple (*E*, ─po→, ─dd→, λ) where:
@@ -145,14 +176,14 @@ we would like to know when they can be combined to form a program
 execution. A *candidate execution* is one where we combine together
 the individual thread executions. For example a candidate execution of the TAR pit is:
 
->  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)  
->  (`R m[0] → 1`) ─ppo→ (`W m[1] → 1`)  
+>  `R m[1] → 1` ─ppo→ `W m[0] → 1`  
+>  `R m[0] → 1` ─ppo→ `W m[1] → 1`  
 
 and a candidate execution of the TAR pit companion is:
 
->  (`R m[1] → 1`) ─ppo→ (`W m[0] → 1`)  
->  (`R m[0] → 1`)  
->  (`W m[1] → 1`)  
+>  `R m[1] → 1` ─ppo→ `W m[0] → 1`  
+>  `R m[0] → 1`  
+>  `W m[1] → 1`  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
 (─rf→, ─sc→) where:
@@ -178,11 +209,40 @@ where we define:
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
 
->  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─hb→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`) ─hb→ (`W m[1] → 1`)
+>  `W m[1] → 1` ─rf→ `R m[1] → 1` ─hb→ `W m[0] → 1` ─rf→ `R m[0] → 1` ─hb→ `W m[1] → 1`
 
 but in the TAR pit companion, the cycle is broken:
 
->  (`W m[1] → 1`) ─rf→ (`R m[1] → 1`) ─hb→ (`W m[0] → 1`) ─rf→ (`R m[0] → 1`)
+>  `W m[1] → 1` ─rf→ `R m[1] → 1` ─hb→ `W m[0] → 1` ─rf→ `R m[0] → 1`
+
+Moreover, we have made very few requirements of ─sc→. We could ask that it is
+total on all atomic events, which would require atomic events to be
+sequentially consistent. For example, in the program:
+```
+   m[0..1] = [0,0]; m[0..1] = [1,2];  ∥  [r₀,r₁] = m[0..1];
+```
+we have candidate program execution:
+
+> [`W m[0] = 0`,`W m[1] = 0`] ─hb→ [`W m[0] = 1`,`W m[1] = 2`] 
+> [`R m[0] = 1`,`R m[1] = 0`]
+
+but this execution is not sequentially consistent on atomics, since there is no way
+to make ─sc→ total on atomics.
+
+However, this condition is too strong, in that it requires atomics at different sizes
+to be sequentially consistent. Consider the program:
+```
+   m[0..1] = [0,0]; m[0..1] = [1,2];  ∥  [r₀] = m[0..0]; [r₁] = m[1..1];
+```
+with candidate program execution:
+
+> [`W m[0] = 0`,`W m[1] = 0`] ─hb→ [`W m[0] = 1`,`W m[1] = 2`] 
+> [`R m[0] = 1`] ─hb→ [`R m[1] = 0`]
+
+This execution should be allowed, as the execution engine might have different
+synchronization mechanisms for different sized data (for example, using atomics
+for small values, but locks for larger ones). For this reason, we only require
+─sc→ to be total on atomic events of the same size.
 
 **Definition** A *program execution* is a candidate program execution satisfying:
 
