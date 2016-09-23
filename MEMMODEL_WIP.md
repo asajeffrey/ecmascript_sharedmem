@@ -52,22 +52,13 @@ and the ‘TAR pit companion’ program (which can result in `x == m[0] == m[1] 
    m[0] = m[1];  ∥  x = m[0]; m[1] = 1;
 ```
 
-The model is parameterized on an alphabet, with (possibly overlapping) subsets of *read*,
-and *write* actions. In examples, the alphabet consists of:
+**Definition**: The *alphabet* Σ is the set consisting of:
 
-* `R m[i] = v` (a read action)
-* `W m[i] = v` (a write action)
+* *read actions*: `R m[i] = v`, and
+* *write actions*: `W m[i] = v`,
 
-Each memory alphabet comes with a notion of when a read *matches* a write
-(in examples, when they share a memory location and a value) and when
-two writes overlap (in examples, when they share a memory location).
-
-**Definition**: a *memory alphabet* is a 5-tuple (Σ, *R*, *W*, *M*, *O*) where:
-* Σ is a set of *actions*,
-* *R* ⊆ Σ is a subset of *read actions*,
-* *W* ⊆ Σ is a subset of *write actions*,
-* *M* ⊆ (*W* × *R*), is the *match* relation, and
-* *O* ⊆ (*W* × *W*), is the *overlap* relation. ∎
+where `m` is a shared memory, `i` an index drawn from ℕ, and `v` is a byte value drawn from {0..255}.
+We call `m[i]` the *location* of an action, and `v` the *value* of an action. ∎
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
@@ -134,8 +125,8 @@ Define:
 * the *size* of an event *e* is the size of { *d* | *d* ←po→ *e* },
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
-* a write event *d* matches a read event *e* when λ(*d*) matches λ(*e*), and
-* a write event *d* overlaps a write event *e* when λ(*d*) overlaps λ(*e*). ∎
+* the *location* of an event *e* is the location of λ(*e*), and
+* the *value* of an event *e* is the value of λ(*e*). ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
@@ -165,11 +156,11 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 * *d* ─dd→ *e*,
 * *d* is an atomic read, and *e* is a read,
 * *d* is a write, and *e* is an atomic write, or
-* *d* is a write, and *e* is an overlapping released write,
+* *d* is a write, and *e* is a released write to the same location,
 
 where we define a write event *e* to be a *released write* whenever
 there is some atomic write *c* such that *e* ─po→ *c*,
-and there is no *e ─po→ d ─po→ c* where *d* overlaps *e*. ∎
+and there is no *e ─po→ d ─po→ c* where *d* is a write event with the same location as *e*. ∎
 
 Now, given a thread execution for each thread in the program,
 we would like to know when they can be combined to form a program
@@ -188,16 +179,17 @@ and a candidate execution of the TAR pit companion is:
 **Definition** Given *n* thread executions define a *candidate program execution* to be
 (─rf→, ─mo→) where:
 
-* ─rf→ is a relation between write events and matching reads,
+* ─rf→ is a relation between write events and read events,
 * ─mo→ is a transitive relation on atomic events with kernel ←po→,
 
 such that if *c* ─rf→ *e* then:
 
+* *c* and *e* have the same location and value,
 * we do not have *e* ─hb→ *c*,
 * we do not have *e* ─po→ *c*,
 * if *c* and *e* are atomic, then *c* ─mo→ *e*,
-* there is no *c* ─hb→ *d* ─hb→ *e* where *d* overlaps *e*, and
-* there is no *c* ─po→ *d* ─po→ *e* where *d* overlaps *e*,
+* there is no *c* ─hb→ *d* ─hb→ *e* where *d* writes to the same location as *e*, and
+* there is no *c* ─po→ *d* ─po→ *e* where *d* writes to the same location as *e*,
 
 where we define:
 
