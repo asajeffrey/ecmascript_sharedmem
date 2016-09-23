@@ -186,10 +186,10 @@ and a candidate execution of the TAR pit companion is:
 >  `W m[1] → 1`  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
-(─rf→, ─sc→) where:
+(─rf→, ─mo→) where:
 
 * ─rf→ is a relation between write events and matching reads,
-* ─sc→ is a transitive relation on atomic events with kernel ←po→,
+* ─mo→ is a transitive relation on atomic events with kernel ←po→,
 
 such that if *c* ─rf→ *e* then:
 
@@ -215,7 +215,7 @@ but in the TAR pit companion, the cycle is broken:
 
 >  `W m[1] → 1` ─rf→ `R m[1] → 1` ─hb→ `W m[0] → 1` ─rf→ `R m[0] → 1`
 
-Moreover, we have made very few requirements of ─sc→. We could ask that it is
+Moreover, we have made very few requirements of ─mo→. We could ask that it is
 total on all atomic events, which would require atomic events to be
 sequentially consistent. For example, in the program:
 ```
@@ -227,7 +227,7 @@ we have candidate program execution:
 > [`R m[0] = 1`,`R m[1] = 0`]
 
 but this execution is not sequentially consistent on atomics, since there is no way
-to make ─sc→ total on atomics.
+to make ─mo→ total on atomics.
 
 However, this condition is too strong, in that it requires atomics at different sizes
 to be sequentially consistent. Consider the program:
@@ -242,12 +242,12 @@ with candidate program execution:
 This execution should be allowed, as the execution engine might have different
 synchronization mechanisms for different sized data (for example, using atomics
 for small values, but locks for larger ones). For this reason, we only require
-─sc→ to be total on atomic events of the same size.
+─mo→ to be total on atomic events of the same size.
 
 **Definition** A *program execution* is a candidate program execution satisfying:
 
 * *thin-air-read-free*: (─hb⟶ ∪ ─rf→)* is a partial order, and
-* *per-size sequentially consistent*: ─sc→ is total on atomic events of the same size. ∎
+* *per-size sequentially consistent*: ─mo→ is total on atomic events of the same size. ∎
 
 ## Compilation to and from C/C++ atomics
 
