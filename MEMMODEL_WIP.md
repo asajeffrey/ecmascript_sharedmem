@@ -146,47 +146,41 @@ program order, *d* ←po→ *e* when *d* and *e* must be executed as one atom,
 and *d* ─dd→ *e* when event *e* depends on event *d*.
 In examples, we will often use the event labels to stand in for the events
 (with subscripts if necessary to disambiguate), and write
-[*e*₁,⋯,*eₙ*] when *e*₁ ←po→ ⋯ ←po→ *eₙ*
+[*e*₁,⋯,*eₙ*] when *e*₁ ←po→ ⋯ ←po→ *eₙ* are atomic.
 
 For example, an execution of `x = m[0]; m[1] = x;` has:
 
-* program order: `R m[0] → 1` ─po→ `W m[1] → 1` 
-* data dependency: `R m[0] → 1` ─dd→ `W m[1] → 1` 
+> `R m[0] → 1` ─po→ `W m[1] → 1`
+>
+> `R m[0] → 1` ─dd→ `W m[1] → 1`
 
 an execution of `x = m[0]; m[1] = 1;` has:
 
-* program order: `R m[0] → 1` ─po→ `W m[1] → 1`
-* no data dependencies
+> `R m[0] → 1` ─po→ `W m[1] → 1`
 
 an execution of `r₀ = m[0]; r₁ = m[1];` has:
 
-* program order: `R m[0] → 1` ─po→ `R m[1] → 2` 
-* no data dependencies
+> `R m[0] → 1` ─po→ `R m[1] → 2`
 
 an execution of `[r₀] = m[0..0]; [r₁] = m[1..1];` has:
 
-* program order: [`R m[0] → 1`] ─po→ [`R m[1] → 2`] 
-* no data dependencies
+> [`R m[0] → 1`] ─po→ [`R m[1] → 2`]
 
 an execution of `[r₀,r₁] = m[0..1];` has:
 
-* program order: [`R m[0] → 1`,`R m[1] → 2`] 
-* no data dependencies
+> [`R m[0] → 1`,`R m[1] → 2`]
 
 an execution of `m[0] = 1; m[1] = 2;` has:
 
-* program order: `W m[0] → 1` ─po→ `W m[1] → 2` 
-* no data dependencies
+> `W m[0] → 1` ─po→ `W m[1] → 2`
 
 an execution of `m[0..0] = [1]; m[1..1] = [2];` has:
 
-* program order: [`W m[0] → 1`] ─po→ [`W m[1] → 2`] 
-* no data dependencies
+> [`W m[0] → 1`] ─po→ [`W m[1] → 2`]
 
 an execution of `m[0..1] = [1,2];` has:
 
-* program order: [`W m[0] → 1`,`W m[1] → 2`] 
-* no data dependencies
+> [`W m[0] → 1`,`W m[1] → 2`]
 
 **Definition**: a *thread execution* is a 5-tuple (*E*, *A*, λ, ─po→, ─dd→) where:
 
