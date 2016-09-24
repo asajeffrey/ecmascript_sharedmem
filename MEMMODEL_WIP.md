@@ -217,7 +217,22 @@ First, we observe that the program order is not observable, for example there is
 context which can distinguish `m[0] = 1; m[1] = 2;` from ` m[1] = 2; m[0] = 1;`.
 Instead we are interested in a smaller relation, the *preserved program order*.
 
-Note that most non-atomic events can be reordered, with the exception of the
+Note that most non-atomic events can be reordered, with the exception of
+data dependencies and writes to the same location. For example the program:
+```
+  x = m[0]; y = m[0]; m[1] = x; m[1] = 1;
+```
+has executions of the form:
+
+> `R m[0] = v` ─po→ `R m[0] = w` ─po→ `W m[1] = v` ─po→ `W m[1] = 1`
+>
+> `R m[0] = v` ─dd→ `W m[1] = v`  
+
+and so we have preserved program order:
+
+> `R m[0] = v` ─ppo→ `W m[1] = v` ─ppo→ `W m[1] = 1`
+
+the
 last write before a release. For example, we can only swap the first two writes
 in:
 ```
