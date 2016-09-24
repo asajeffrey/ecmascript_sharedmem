@@ -134,7 +134,7 @@ and the ‘TAR pit companion’ program (which can result in `x == m[0] == m[1] 
 * *read actions*: `R m[i] = v`, and
 * *write actions*: `W m[i] = v`,
 
-where `m` is a shared memory, `i` an index drawn from ℕ, and `v` is a byte value drawn from {0..255}.
+where `m[i]` is an index in a shared memory, and `v` is a byte value
 We call `m[i]` the *location* of an action, and `v` the *value* of an action. ∎
 
 We are mostly treating thread executions as black boxes, but we are
