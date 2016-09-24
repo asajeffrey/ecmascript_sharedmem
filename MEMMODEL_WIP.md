@@ -188,18 +188,16 @@ an execution of `m[0..1] = [1,2];` has:
 * program order: [`W m[0] → 1`,`W m[1] → 2`] 
 * no data dependencies
 
-**Definition**: a *thread execution* is a 4-tuple (*E*, ─po→, ─dd→, λ) where:
+**Definition**: a *thread execution* is a 5-tuple (*E*, *A*, λ, ─po→, ─dd→) where:
 
 * *E* a set of *events*,
-* ─po→ is a total, transitive relation on events (po stands for *program order*),
-* ─dd→ is a relation from write events to read events,
-* λ : (*E* → Σ) is a *labelling*, such that
-* if d ─dd→ e then d ─po→ e and not e ─po→ d.
+* *A ⊆ E* is the set of *atomic events*,
+* λ : (*E* → Σ) is a *labelling*,
+* ─po→ ⊆ (*E* × *E*) is the total *program order* between events,
+* ─dd→ ⊆ ─po→ is the *data dependency* relation,
 
 Define:
 
-* an *atomic event* is an event *e* where *e* ←po→ *e*,
-* the *size* of an event *e* is the size of { *d* | *d* ←po→ *e* },
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
 * the *location* of an event *e* is the location of λ(*e*), and
@@ -209,9 +207,9 @@ Note that the host language implementation has a lot of freedom in defining data
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
 a lot like non-interference.]
 
-In practice, languages will place limits on which labels can be made atomic,
-for example allowing `W m[i] = v` ←po→ `W m[j] = v` only when `i == j+1` or `j == i+1`.
-[We should revisit this in the ECMAScript memory alphabet.]
+In practice, languages will place limits on which events can be made atomic,
+for example allowing `W m[i] = v` ←po→ `W m[j] = v` only when `i == j+1` or `j == i+1`,
+but this does not impact the memory model.
 
 ## Memory model
 
@@ -223,7 +221,7 @@ Note that most non-atomic events can be reordered, with the exception of the
 last write before a release. For example, we can only swap the first two writes
 in:
 ```
-  m[0] = 1; m[0] = 2; m[0] = 3; release m[1] = 1;
+  m[0] = 1; m[0] = 2; m[0] = 3; m[1..1] = [1];
 ```
 We will call such a write event a `released write'.
 
@@ -271,10 +269,11 @@ such that if *c* ─rf→ *e* then:
 where we define:
 
 * *E* is *E*₁ ∪ ⋯ ∪ *Eₙ* (wlog we assume the *Eᵢ* are disjoint),
+* *A* is *A*₁ ∪ ⋯ ∪ *Aₙ*,
 * ─dd→ is ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ,
 * ─po→ is ─po→₁ ∪ ⋯ ∪ ─po→ₙ,
 * ─ppo→ is ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ,
-* the *synchronizes with* relation ─sw→ is ─rf⟶ restricted to atomic events, and
+* the *synchronizes with* relation ─sw→ is (─rf⟶ ∩ (*A* × *A*)), and
 * the *happens before* relation ─hb→ is (─ppo→ ∪ ─sw→)*. ∎
 
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
