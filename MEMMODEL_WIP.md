@@ -269,7 +269,7 @@ where we define:
 * ─dd→ = (─dd→₁ ∪ ⋯ ∪ ─dd→ₙ),
 * ─po→ = (─po→₁ ∪ ⋯ ∪ ─po→ₙ),
 * ─ppo→ = (─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ), and
-* ─sw→ = (─rf⟶ ∩ (*A* × *A*)). ∎
+* ─sw→ = (─rf→ ∩ (*A* × *A*)). ∎
 
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
