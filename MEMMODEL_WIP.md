@@ -220,37 +220,26 @@ Instead we are interested in a smaller relation, the *preserved program order*.
 Note that most non-atomic events can be reordered, with the exception of
 data dependencies and writes to the same location. For example the program:
 ```
-  x = m[0]; y = m[0]; m[1] = x; m[1] = 1;
+  x = m[0]; y = m[0]; m[1] = 1; m[1] = x;
 ```
 has executions of the form:
 
-> `R m[0] = v` ─po→ `R m[0] = w` ─po→ `W m[1] = v` ─po→ `W m[1] = 1`
+> `R m[0] = v` ─po→ `R m[0] = w` ─po→ `W m[1] = 1` ─po→ `W m[1] = v`
 >
 > `R m[0] = v` ─dd→ `W m[1] = v`  
 
 and so we have preserved program order:
 
-> `R m[0] = v` ─ppo→ `W m[1] = v` ─ppo→ `W m[1] = 1`
-
-the
-last write before a release. For example, we can only swap the first two writes
-in:
-```
-  m[0] = 1; m[0] = 2; m[0] = 3; m[1..1] = [1];
-```
-We will call such a write event a `released write'.
+> `R m[0] = v` ─ppo→ `W m[1] = v` ←ppo─ `W m[1] = 1`  
+> `R m[0] = w`
 
 **Definition**: In a thread execution, the *preserved program order* is the relation
 where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 
-* *d* ─dd→ *e*,
+* *d* is a data dependency of *e*,
 * *d* is an atomic read, and *e* is a read,
 * *d* is a write, and *e* is an atomic write, or
-* *d* is a write, and *e* is a released write to the same location,
-
-where we define a write event *e* to be a *released write* whenever
-there is some atomic write *c* such that *e* ─po→ *c*,
-and there is no *e ─po→ d ─po→ c* where *d* is a write event with the same location as *e*. ∎
+* *d* and *e* are writes to the same location. ∎
 
 Now, given a thread execution for each thread in the program,
 we would like to know when they can be combined to form a program
