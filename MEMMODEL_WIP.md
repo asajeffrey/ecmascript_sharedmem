@@ -246,14 +246,14 @@ we would like to know when they can be combined to form a program
 execution. A *candidate execution* is one where we combine together
 the individual thread executions. For example a candidate execution of the TAR pit is:
 
->  `R m[1] → 1` ─ppo→ `W m[0] → 1`  
->  `R m[0] → 1` ─ppo→ `W m[1] → 1`  
+>  `R m[1] = 1` ─ppo→ `W m[0] = 1`  
+>  `R m[0] = 1` ─ppo→ `W m[1] = 1`  
 
 and a candidate execution of the TAR pit companion is:
 
->  `R m[1] → 1` ─ppo→ `W m[0] → 1`  
->  `R m[0] → 1`  
->  `W m[1] → 1`  
+>  `R m[1] = 1` ─ppo→ `W m[0] = 1`  
+>  `R m[0] = 1`  
+>  `W m[1] = 1`  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
 (─rf→, ─mo→) where:
@@ -283,11 +283,11 @@ where we define:
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
 
->  `W m[1] → 1` ─rf→ `R m[1] → 1` ─hb→ `W m[0] → 1` ─rf→ `R m[0] → 1` ─hb→ `W m[1] → 1`
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1` ─hb→ `W m[1] = 1`
 
 but in the TAR pit companion, the cycle is broken:
 
->  `W m[1] → 1` ─rf→ `R m[1] → 1` ─hb→ `W m[0] → 1` ─rf→ `R m[0] → 1`
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
 
 Moreover, we have made very few requirements of ─mo→. We could ask that it is
 total on all atomic events, which would require atomic events to be
