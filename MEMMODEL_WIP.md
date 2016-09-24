@@ -198,11 +198,11 @@ an execution of `m[0..1] = [1,2];` has:
 
 Define:
 
-* a *read event* is an event *e* where λ(*e*) is a read action,
-* a *write event* is an event *e* where λ(*e*) is a write action,
-* the *value* of an event *e* is the value of λ(*e*), and
-* the *location* of an event *e* is the location of λ(*e*),
-* the *location range* of an event *e* is the set of locations of every *d* ←po→ *e*. ∎
+* the set of *read events*, *R*, is { *e* | λ(*e*) is a read action },
+* the set of *write events*, *W*, is { *e* | λ(*e*) is a write action },
+* the *value* of an event, val(*e*), is the value of λ(*e*),
+* the *location* of an event, loc(*e*) is the location of λ(*e*), and
+* the *location range* of an event, range(*e*), is { loc(*d*) | *d* ←hb→ *e* }.
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
