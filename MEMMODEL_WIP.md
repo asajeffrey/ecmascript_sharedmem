@@ -187,7 +187,7 @@ an execution of `m[0..1] = [1,2];` has:
 * *E* a set of *events*,
 * *A ⊆ E* is the set of *atomic events*,
 * λ : (*E* → Σ) is a *labelling*,
-* ─po→ ⊆ (*E* × *E*) is the total *program order* between events,
+* ─po→ ⊆ (*E* × *E*) is the *program order* total pre-order,
 * ─dd→ ⊆ ─po→ is the *data dependency* relation,
 
 Define:
