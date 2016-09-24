@@ -4,14 +4,107 @@ This directory contains a WIP memory model for ECMAScript shared memory and atom
 
 This README contains notes summarizing the memory model.
 
-## Goals
+## Introduction
 
-* Can be compiled to and from existing memory models (such as x86-TSO, ARM, LLVM or C/C++11) without adding fences to non-atomic reads and writes.
-* Supports compiler optimizations such as independent read/write reordering, roach motel and dead code elimination.
-* Allows inductive reasoning (e.g. no thin-air reads) and satisfies the SC-DRF theorem.
-* No use of undefined behavior or undefined values.
-* Requires as few changes as possible to the ECMAScript specification.
-* Contains as little new work as possible.
+The SharedArrayBuffer proposal for ECMAScript allows byte arrays to be
+shared amongst workers. This is particularly significant for asm.js
+programs, since it allows multi-threaded C programs to be compiled via
+LLVM to asm.js, and for C threads communicating via shared memory to
+be compiled to workers communicating via a SharedArrayBuffer.
+
+The proposed ECMAScript API for shared memory supports two kinds of
+accesses: *atomic* and *non-atomic*. Atomic accesses are required to
+be sequentially consistent, and are implemented using synchronizing
+mechanisms such as fences or locks. Non-atomic accesses have much
+weaker consistency requirements, and are implemented without any
+synchronization.
+
+In this note, we propose a WIP memory model suitable for ECMAScript.
+It is designed to be as close as possible to the C/C++11 and LLVM
+memory models, to support both compilation from LLVM to asm.js, and to
+support implementing SharedArrayBuffer in languages such as C/C++ or
+Rust. The model can be simpler than the C/C++11 or LLVM models, since
+it has fewer types of access, and in particular does not have undefined
+behaviours or values.
+
+The model is based on *events* (either reads `R m[i] = v` or writes
+`W m[i] = w`) where each event involves a *location* in memory `m[i]`,
+and a byte *value* `v`. These events come equipped with three relations:
+
+* the *happens before* relation, where *d* ─hb→ *e*
+  whenever any context which observes *e* must also observe *d*,
+* the *reads from* relation, where *d* ─rf→ *e*
+  whenever *d* is a write event, and *e* is a matching visible read event, and
+* the *memory order*, where *d* ─mo→ *e*
+  whenever *d* and *e* are atomic events which are sequentially
+  consistent.
+
+In particular, *d* ←hb→ *e* whenever *d* and *e* events from the same atom,
+and must be executed together. The ⟵hb→ relation is a partial equivalence,
+where *e* ←hb→ *e* whenever *e* is an atomic event.
+
+For example, consider the thread which atomically zeroes eight bytes
+of memory, then atomically assigns to them (written in pseudo-Rust):
+```
+  m[0..7] = [0,0,0,0,0,0,0,0];
+  m[0..7] = [1,2,3,4,5,6,7,8];
+```
+An execution of this thread is:
+
+* `W m[0] = 0` ←hb→ ⋯ ←hb→ `W m[7] = 0` ─hb→ `W m[0] = 1` ←hb→ ⋯ ←hb→ `W m[7] = 8`
+
+In parallel, we could run a program which reads two bytes of memory:
+```
+  [r₂,r₃] = m[2..3];
+```
+
+Possible execution of this thread include:
+
+1. `R m[2] = 0` ←hb→ `R m[3] = 0`
+2. `R m[2] = 3` ←hb→ `R m[3] = 4`
+3. `R m[2] = 0` ←hb→ `R m[3] = 4`
+4. `R m[2] = 3` ←hb→ `R m[3] = 0`
+
+Putting these two threads in parallel, the first execution of the reading thread
+contributes to a program execution, since we have:
+
+* `W m[2] = 0` ─rf→ `R m[2] = 0` and `W m[3] = 0` ─rf→ `R m[3] = 0`, and
+* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[2] = 0` ─mo→ `R m[3] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8`.
+
+The second execution also contributes to a program execution, since we have:
+
+* `W m[2] = 3` ─rf→ `R m[2] = 3` and `W m[3] = 4` ─rf→ `R m[3] = 4`, and
+* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[2] = 0` ─mo→ `R m[3] = 0`.
+
+These executions are sequentially consistent, since ─mo→ is a total
+order, and atomic operations do not overlap. The other two executions
+are more interesting, since they include *tearing*. The third
+execution has:
+
+* `W m[2] = 0` ─rf→ `R m[2] = 0` and `W m[3] = 4` ─rf→ `R m[3] = 4`, and
+* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[2] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[3] = 0`.
+
+and the fourth has:
+
+* `W m[2] = 3` ─rf→ `R m[2] = 3` and `W m[3] = 0` ─rf→ `R m[3] = 0`, and
+* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[3] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[2] = 3`.
+
+In both cases, ─mo→ is a total order, but the atomic operations for
+reading and writing overlap.
+
+There is an atomics implementation which can demonstrate this
+behavior, however, which is one where the synchronization mechanism
+for 64-bit values is different from that for 16-bit values.  For
+example, on a 32-bit architecture, atomic 64-bit accesses might be
+implemented using a global lock, whereas 16-bit accesses might be
+implemented using appropriate machine instructions.
+
+For this reason, we formalize a notion of *per-size sequential consistency*,
+which requires sequential consistency on atoms operating on data of the
+same size, but not on all atoms.
+
+[TODO: discuss per-byte SC, discuss non-atomics, and make sure the
+intro lines up with the formalism.]
 
 ## Preliminaries
 
