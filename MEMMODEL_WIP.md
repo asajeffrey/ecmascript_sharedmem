@@ -40,7 +40,7 @@ and a byte *value* `v`. These events come equipped with three relations:
   consistent.
 
 In particular, *d* ←hb→ *e* whenever *d* and *e* events from the same atom,
-and must be executed together. The ⟵hb→ relation is a partial equivalence,
+and must be executed together. The ←hb→ relation is a partial equivalence,
 where *e* ←hb→ *e* whenever *e* is an atomic event.
 
 For example, consider the thread which atomically zeroes eight bytes
