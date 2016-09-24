@@ -341,6 +341,14 @@ In the (hopefully unlikely) case that a program is
 compiled from C to ECMAScript to C to ECMAScript to C, every memory
 access in the original program will become sequentially consistent.
 
+The requirement that program executions are per-byte sequentially consistent
+constrains the implementation in the case that it has to use locks to
+implement atoms whose data size is large than one machine word.
+Inside the critical section, accesses have to be sequentially consistent,
+not just relaxed.
+
+[TODO: do we want to relax this requirement?]
+
 ## TODO
 
 Still to do:
