@@ -200,15 +200,16 @@ Define:
 
 * a *read event* is an event *e* where λ(*e*) is a read action,
 * a *write event* is an event *e* where λ(*e*) is a write action,
-* the *location* of an event *e* is the location of λ(*e*), and
-* the *value* of an event *e* is the value of λ(*e*). ∎
+* the *value* of an event *e* is the value of λ(*e*), and
+* the *location* of an event *e* is the location of λ(*e*),
+* the *location range* of an event *e* is the set of locations of every *d* ←po→ *e*. ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
 a lot like non-interference.]
 
-In practice, languages will place limits on which events can be made atomic,
-for example allowing `W m[i] = v` ←po→ `W m[j] = v` only when `i == j+1` or `j == i+1`,
+In practice, languages will place limits on location ranges,
+for example allowing {`m[i]`,`m[j]`} only when `i == j+1` or `j == i+1`,
 but this does not impact the memory model.
 
 ## Memory model
@@ -256,29 +257,25 @@ and a candidate execution of the TAR pit companion is:
 >  `W m[1] = 1`  
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
-(─rf→, ─mo→) where:
+(*E*, ─hb→, ─rf→) where:
 
-* ─rf→ is a relation between write events and read events,
-* ─mo→ is a transitive relation on atomic events with kernel ←po→,
+* ─hb→ = (─ppo→ ∪ ─sw→)* is the *happens before* partial order, and
+* ─rf→ ⊆ (*E* × *E*) is the *reads from* relation,
 
 such that if *c* ─rf→ *e* then:
 
-* *c* and *e* have the same location and value,
-* we do not have *e* ─hb→ *c*,
-* we do not have *e* ─po→ *c*,
-* if *c* and *e* are atomic, then *c* ─mo→ *e*,
-* there is no *c* ─hb→ *d* ─hb→ *e* where *d* writes to the same location as *e*, and
-* there is no *c* ─po→ *d* ─po→ *e* where *d* writes to the same location as *e*,
+* *c* is a write event, and *e* is a read event with the same location and value,
+* we do not have (*e* ─hb→ *c*) or (*e* ─po→ *c*),
+* there is no (*c* ─hb→ *d* ─hb→ *e*) or (*c* ─po→ *d* ─po→ *e*) where *d* writes to the same location as *e*,
 
 where we define:
 
-* *E* is *E*₁ ∪ ⋯ ∪ *Eₙ* (wlog we assume the *Eᵢ* are disjoint),
-* *A* is *A*₁ ∪ ⋯ ∪ *Aₙ*,
-* ─dd→ is ─dd→₁ ∪ ⋯ ∪ ─dd→ₙ,
-* ─po→ is ─po→₁ ∪ ⋯ ∪ ─po→ₙ,
-* ─ppo→ is ─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ,
-* the *synchronizes with* relation ─sw→ is (─rf⟶ ∩ (*A* × *A*)), and
-* the *happens before* relation ─hb→ is (─ppo→ ∪ ─sw→)*. ∎
+* *E* = (*E*₁ ∪ ⋯ ∪ *Eₙ*) (wlog we assume the *Eᵢ* are disjoint),
+* *A* = (*A*₁ ∪ ⋯ ∪ *Aₙ*),
+* ─dd→ = (─dd→₁ ∪ ⋯ ∪ ─dd→ₙ),
+* ─po→ = (─po→₁ ∪ ⋯ ∪ ─po→ₙ),
+* ─ppo→ = (─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ), and
+* ─sw→ = (─rf⟶ ∩ (*A* × *A*)). ∎
 
 Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
 For example in the TAR pit candidate execution, we have:
@@ -289,39 +286,25 @@ but in the TAR pit companion, the cycle is broken:
 
 >  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
 
-Moreover, we have made very few requirements of ─mo→. We could ask that it is
-total on all atomic events, which would require atomic events to be
-sequentially consistent. For example, in the program:
-```
-   m[0..1] = [0,0]; m[0..1] = [1,2];  ∥  [r₀,r₁] = m[0..1];
-```
-we have candidate program execution:
+**Definition** A candidate program execution is *thin-air-read-free* if
+(─hb⟶ ∪ ─rf→)* is a partial order.
 
-> [`W m[0] = 0`,`W m[1] = 0`] ─hb→ [`W m[0] = 1`,`W m[1] = 2`] 
-> [`R m[0] = 1`,`R m[1] = 0`]
+[TODO: motivate these defns.]
 
-but this execution is not sequentially consistent on atomics, since there is no way
-to make ─mo→ total on atomics.
+**Definition** A candidate program execution is *per-byte sequentially consistent* if
+there is a total order ─mo→ ⊆ (*A* × *A*) such that:
 
-However, this condition is too strong, in that it requires atomics at different sizes
-to be sequentially consistent. Consider the program:
-```
-   m[0..1] = [0,0]; m[0..1] = [1,2];  ∥  [r₀] = m[0..0]; [r₁] = m[1..1];
-```
-with candidate program execution:
+* if *d* ─po→ *e* then *d* ─mo→ *e*,
+* if *d* ─rf→ *e* then *d* ─mo→ *e*,
+* if *d* ─rf→ *e* and *c* is an atomic write to the same location as *c* and *d*,
+  then either *c* ─mo→ *d* or *e* ─mo→ *c*. ∎
 
-> [`W m[0] = 0`,`W m[1] = 0`] ─hb→ [`W m[0] = 1`,`W m[1] = 2`] 
-> [`R m[0] = 1`] ─hb→ [`R m[1] = 0`]
+**Definition** A candidate program execution is *per-range isolated*
+if, whenever *b* ─sw→ *c* ←hb→ *e* ←sw─ *d* and *b*, *c*, *d* and *e*
+all have the same location range, then *b* ←hb→ *d*. ∎
 
-This execution should be allowed, as the execution engine might have different
-synchronization mechanisms for different sized data (for example, using atomics
-for small values, but locks for larger ones). For this reason, we only require
-─mo→ to be total on atomic events of the same size.
-
-**Definition** A *program execution* is a candidate program execution satisfying:
-
-* *thin-air-read-free*: (─hb⟶ ∪ ─rf→)* is a partial order, and
-* *per-size sequentially consistent*: ─mo→ is total on atomic events of the same size. ∎
+**Definition** A *program execution* is a candidate program execution which is
+thin-air-read-free, per-byte sequentially consistent, and per-range isolated.
 
 ## Compilation to and from LLVM or C/C++ atomics
 
