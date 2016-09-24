@@ -260,11 +260,11 @@ and a candidate execution of the TAR pit companion is:
 (*E*, ─hb→, ─rf→) where:
 
 * ─hb→ = (─ppo→ ∪ ─sw→)* is the *happens before* partial order, and
-* ─rf→ ⊆ (*E* × *E*) is the *reads from* relation,
+* ←rf─ : *R* → *W* is the *reads from* function,
 
 such that if *c* ─rf→ *e* then:
 
-* *c* is a write event, and *e* is a read event with the same location and value,
+* *c* has the same location and value as *e*,
 * we do not have (*e* ─hb→ *c*) or (*e* ─po→ *c*),
 * there is no (*c* ─hb→ *d* ─hb→ *e*) or (*c* ─po→ *d* ─po→ *e*) where *d* writes to the same location as *e*,
 
