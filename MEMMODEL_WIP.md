@@ -287,7 +287,7 @@ but in the TAR pit companion, the cycle is broken:
 >  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
 
 **Definition** A candidate program execution is *thin-air-read-free* if
-(─hb⟶ ∪ ─rf→)* is a partial order.
+(─hb→ ∪ ─rf→)* is a partial order.
 
 [TODO: motivate these defns.]
 
