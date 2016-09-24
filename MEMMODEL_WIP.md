@@ -29,15 +29,12 @@ behaviours or values.
 
 The model is based on *events* (either reads `R m[i] = v` or writes
 `W m[i] = w`) where each event involves a *location* in memory `m[i]`,
-and a byte *value* `v`. These events come equipped with three relations:
+and a byte *value* `v`. These events come equipped with two relations:
 
 * the *happens before* relation, where *d* ─hb→ *e*
-  whenever any context which observes *e* must also observe *d*,
+  whenever any context which observes *e* must also observe *d*, and
 * the *reads from* relation, where *d* ─rf→ *e*
-  whenever *d* is a write event, and *e* is a matching visible read event, and
-* the *memory order*, where *d* ─mo→ *e*
-  whenever *d* and *e* are atomic events which are sequentially
-  consistent.
+  whenever *e* is a read event, and *d* is its justifying write event.
 
 In particular, *d* ←hb→ *e* whenever *d* and *e* events from the same atom,
 and must be executed together. The ←hb→ relation is a partial equivalence,
@@ -51,46 +48,34 @@ of memory, then atomically assigns to them (written in pseudo-Rust):
 ```
 An execution of this thread is:
 
-* `W m[0] = 0` ←hb→ ⋯ ←hb→ `W m[7] = 0` ─hb→ `W m[0] = 1` ←hb→ ⋯ ←hb→ `W m[7] = 8`
+> `W m[0] = 0` ←hb→ ⋯ ←hb→ `W m[7] = 0`  
+>   ─hb→ `W m[0] = 1` ←hb→ ⋯ ←hb→ `W m[7] = 8`
 
 In parallel, we could run a program which reads two bytes of memory:
 ```
   [r₂,r₃] = m[2..3];
 ```
 
-Possible execution of this thread include:
+Executions of this thread are of the form:
 
-1. `R m[2] = 0` ←hb→ `R m[3] = 0`
-2. `R m[2] = 3` ←hb→ `R m[3] = 4`
-3. `R m[2] = 0` ←hb→ `R m[3] = 4`
-4. `R m[2] = 3` ←hb→ `R m[3] = 0`
+> `R m[2] = v` ←hb→ `R m[3] = w`
 
-Putting these two threads in parallel, the first execution of the reading thread
-contributes to a program execution, since we have:
+Putting these two threads in parallel, one program execution has the reader reading all zeros:
 
-* `W m[2] = 0` ─rf→ `R m[2] = 0` and `W m[3] = 0` ─rf→ `R m[3] = 0`, and
-* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[2] = 0` ─mo→ `R m[3] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8`.
+> `W m[2] = 0` ─rf→ `R m[2] = 0`  
+> `W m[3] = 0` ─rf→ `R m[3] = 0`  
 
-The second execution also contributes to a program execution, since we have:
+and another execution has the reader reading no zeros:
 
-* `W m[2] = 3` ─rf→ `R m[2] = 3` and `W m[3] = 4` ─rf→ `R m[3] = 4`, and
-* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[2] = 0` ─mo→ `R m[3] = 0`.
+> `W m[2] = 3` ─rf→ `R m[2] = 3`  
+> `W m[3] = 4` ─rf→ `R m[3] = 4`  
 
-These executions are sequentially consistent, since ─mo→ is a total
-order, and atomic operations do not overlap. The other two executions
-are more interesting, since they include *tearing*. The third
-execution has:
+These executions do not exhibit tearing, since
+every read atom is reading from just one write atom.
+An execution which includes tearing is:
 
-* `W m[2] = 0` ─rf→ `R m[2] = 0` and `W m[3] = 4` ─rf→ `R m[3] = 4`, and
-* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[2] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[3] = 0`.
-
-and the fourth has:
-
-* `W m[2] = 3` ─rf→ `R m[2] = 3` and `W m[3] = 0` ─rf→ `R m[3] = 0`, and
-* `W m[0] = 0` ─mo→ ⋯ ─mo→ `W m[7] = 0` ─mo→ `R m[3] = 0` ─mo→ `W m[0] = 1` ─mo→ ⋯ ─mo→ `W m[7] = 8` ─mo→ `R m[2] = 3`.
-
-In both cases, ─mo→ is a total order, but the atomic operations for
-reading and writing overlap.
+> `W m[2] = 0` ─rf→ `R m[2] = 0`  
+> `W m[3] = 4` ─rf→ `R m[3] = 4`  
 
 There is an atomics implementation which can demonstrate this
 behavior, however, which is one where the synchronization mechanism
@@ -99,9 +84,8 @@ example, on a 32-bit architecture, atomic 64-bit accesses might be
 implemented using a global lock, whereas 16-bit accesses might be
 implemented using appropriate machine instructions.
 
-For this reason, we formalize a notion of *per-size sequential consistency*,
-which requires sequential consistency on atoms operating on data of the
-same size, but not on all atoms.
+For this reason, rather than disallow tearing on all atoms,
+we disallow tearing on events with the same address range.
 
 [TODO: discuss per-byte SC, discuss non-atomics, and make sure the
 intro lines up with the formalism.]
