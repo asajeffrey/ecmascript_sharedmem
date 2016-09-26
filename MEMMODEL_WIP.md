@@ -145,18 +145,8 @@ In examples, we use a simple imperative language with a shared array `m`, and wr
 * `m[i..j] = op(m[i..j])` for an atomic update such as increment or CAS.
 * `T₁ ∥ ⋯ ∥ Tₙ` for the parallel composition of `n` threads `T₁` to `Tₘ`.
 
-For example, the ‘variable access reordering′ example (which could result in `r0 == 0` and `r1 == 1`) is:
-```
-  m[0] = 1; m[1] = 2;  ∥  r1 = m[1]; r0 = m[0];
-```
-the ‘TAR pit’ program (which should not result in `x == m[0] == m[1] == 1`) is:
-```
-   m[0] = m[1];  ∥  x = m[0]; m[1] = x;
-```
-and the ‘TAR pit companion’ program (which can result in `x == m[0] == m[1] == 1`) is:
-```
-   m[0] = m[1];  ∥  x = m[0]; m[1] = 1;
-```
+The memory model is defined using a alphabet of *actions*, which are
+individual byte reads and writes.
 
 **Definition**: The *alphabet* Σ is the set consisting of:
 
@@ -168,48 +158,28 @@ We call `m[i]` the *location* of an action, and `v` the *value* of an action. �
 
 We are mostly treating thread executions as black boxes, but we are
 interested in the sequence of labelled events that each execution
-participates in, together with a notion of which events have to be
-executed atomically together, and a data dependency relation on those
+participates in, together with a notion of which events are atomic,
+and a data dependency relation on those
 events.  We write *d* ─po→ *e* when event *d* precedes event *e* in
-program order, *d* ←po→ *e* when *d* and *e* must be executed as one atom,
+program order, *d* ←po→ *e* when *d* and *e* must be executed simultaneously,
 and *d* ─dd→ *e* when event *e* depends on event *d*.
 In examples, we will often use the event labels to stand in for the events
 (with subscripts if necessary to disambiguate), and write
 [*e*₁,⋯,*eₙ*] when *e*₁ ←po→ ⋯ ←po→ *eₙ* are atomic.
 
-For example, an execution of `x = m[0]; m[1] = x;` has:
+For example, an execution of `x = m[0]; y = m[1]; m[0] = 1; m[1] = x;`
+(where all accesses are non-atomic) is:
 
-> `R m[0] → 1` ─po→ `W m[1] → 1`
+> `R m[0] = 1` ─po→ `R m[1] = 1` ─po→ `W m[0] = 1` ─po→ `W m[1] = 1`
 >
-> `R m[0] → 1` ─dd→ `W m[1] → 1`
+> `R m[0] = 1` ─dd→ `W m[1] = 1`
 
-an execution of `x = m[0]; m[1] = 1;` has:
+and an execution of `x = m[0]; y = m[1]; m[0] = 1; m[1] = x;`
+(the same thread, but with atomic accesses) is:
 
-> `R m[0] → 1` ─po→ `W m[1] → 1`
-
-an execution of `r₀ = m[0]; r₁ = m[1];` has:
-
-> `R m[0] → 1` ─po→ `R m[1] → 2`
-
-an execution of `[r₀] = m[0..0]; [r₁] = m[1..1];` has:
-
-> [`R m[0] → 1`] ─po→ [`R m[1] → 2`]
-
-an execution of `[r₀,r₁] = m[0..1];` has:
-
-> [`R m[0] → 1`,`R m[1] → 2`]
-
-an execution of `m[0] = 1; m[1] = 2;` has:
-
-> `W m[0] → 1` ─po→ `W m[1] → 2`
-
-an execution of `m[0..0] = [1]; m[1..1] = [2];` has:
-
-> [`W m[0] → 1`] ─po→ [`W m[1] → 2`]
-
-an execution of `m[0..1] = [1,2];` has:
-
-> [`W m[0] → 1`,`W m[1] → 2`]
+> [`R m[0] = 1`,`R m[1] = 1`] ─po→ [`W m[0] = 1`,`W m[1] = 1`]
+>
+> `R m[0] = 1` ─dd→ `W m[1] = 1`
 
 **Definition**: a *thread execution* is a 5-tuple (*E*, *A*, λ, ─po→, ─dd→) where:
 
@@ -225,7 +195,7 @@ Define:
 * the set of *write events*, *W*, is { *e* | λ(*e*) is a write action },
 * the *value* of an event, val(*e*), is the value of λ(*e*),
 * the *location* of an event, loc(*e*) is the location of λ(*e*), and
-* the *location range* of an event, range(*e*), is { loc(*d*) | *d* ←hb→ *e* }.
+* the *location range* of an event, range(*e*), is { loc(*d*) | *d* ←hb→ *e* }. ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
