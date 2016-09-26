@@ -109,14 +109,26 @@ hardware support.
 
 ## Preliminaries
 
-A relation ─R→ is *total* whenever, for any *d* and *e*, either
-*d* ─R→ *e*, or *e* ─R→ *d*, or *d* = *e*.
-
-The inverse of a relation ─R→ is the relation ←R─ defined as
+The *inverse* of a relation ─R→ is the relation ←R─ defined as
 *d* ←R─ *e* whenever *e* ─R→ *d*.
 
-The kernel of a relation ─R→ is the relation ←R→ defined to be
+The *kernel* of a relation ─R→ is the relation ←R→ defined to be
 *d* ←R→ *e* whenever *d* ←R─ *e* ─R→ *d*.
+
+A relation ─R→ is *reflexive* whenever for any *e* we have *e* ─R→ *e*.
+
+A relation ─R→ is *transitive* whenever *c* ─R→ *d* ─R→ *e* implies *c* ─R→ *e*.
+
+A relation ─R→ is *antisymmetric* whenever *d* ←R→ *e* implies *d* = *e*.
+
+A relation ─R→ is *total* whenever for any *d* and *e*, either
+*d* ─R→ *e* or *e* ─R→ *d*.
+
+A *pre-order* is a reflexive, transitive relation.
+
+A *partial order* is an antisymmetric pre-order.
+
+A *total order* is a total partial order.
 
 ## Host language requirements
 
