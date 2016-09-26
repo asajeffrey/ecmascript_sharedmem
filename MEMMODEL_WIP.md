@@ -196,7 +196,8 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 
 * *d* is a data dependency of *e*,
 * *d* is an atomic read, and *e* is a read,
-* *d* is a write, and *e* is an atomic write, or
+* *d* is a write, and *e* is an atomic write,
+* *d* and *e* are events where *d* ←po→ *e*, or
 * *d* and *e* are writes to the same location. ∎
 
 [Should this defn include all atomic events? We have per-byte SC, which
