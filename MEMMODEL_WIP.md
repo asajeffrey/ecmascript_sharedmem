@@ -136,7 +136,7 @@ program order, *d* ←po→ *e* when *d* and *e* must be executed simultaneously
 and *d* ─dd→ *e* when event *e* depends on event *d*.
 In examples, we will often use the event labels to stand in for the events
 (with subscripts if necessary to disambiguate), and write
-[*e*₁,⋯,*eₙ*] when *e*₁ ←po→ ⋯ ←po→ *eₙ* are atomic.
+[*e*₁,⋯,*eₙ*] when *e*₁ ←at→ ⋯ ←at→ *eₙ*.
 
 For example, an execution of `x = m[0]; y = m[1]; m[0] = 1; m[1] = x;`
 (where all accesses are non-atomic) is:
@@ -152,21 +152,27 @@ and an execution of `x = m[0]; y = m[1]; m[0] = 1; m[1] = x;`
 >
 > `R m[0] = 1` ─dd→ `W m[1] = 1`
 
-**Definition**: a *thread execution* is a 5-tuple (*E*, *A*, λ, ─po→, ─dd→) where:
+**Definition**: a *thread execution* is a 5-tuple (*E*, λ, ←at→, ─po→, ─dd→) where:
 
 * *E* a set of *events*,
-* *A ⊆ E* is the set of *atomic events*,
 * λ : (*E* → Σ) is a *labelling*,
-* ─po→ ⊆ (*E* × *E*) is the *program order* total pre-order,
+* ←at→ ⊆ (*E* × *E*) is the *same-atom* partial equivalence,
+* ─po→ ⊆ (*E* × *E*) is the *program order* total order,
 * ─dd→ ⊆ ─po→ is the *data dependency* relation,
+
+such that:
+
+* if *c* ─po→ *d* ─po→ *e* and *c* ←at→ *e* then *c* ←at→ *d* ←at→ *e*.
 
 Define:
 
+* the set of *atomic events*, *A* is { *e* | *e* ←at→ *e* },
 * the set of *read events*, *R*, is { *e* | λ(*e*) is a read action },
 * the set of *write events*, *W*, is { *e* | λ(*e*) is a write action },
 * the *value* of an event, val(*e*), is the value of λ(*e*),
-* the *location* of an event, loc(*e*) is the location of λ(*e*), and
-* the *location range* of an event, range(*e*), is { loc(*d*) | *d* ←hb→ *e* }. ∎
+* the *location* of an event, loc(*e*) is the location of λ(*e*),
+* the *location range* of an atomic event, range(*e*), is { loc(*d*) | *d* ←at→ *e* }, and
+* the *size* of an atomic event is the size of its location range. ∎
 
 Note that the host language implementation has a lot of freedom in defining data dependency.
 [We will put some sanity conditions on ─dd→ to ensure SC-DRF, which will look
@@ -178,78 +184,37 @@ but this does not impact the memory model.
 
 ## Memory model
 
-First, we observe that the program order is not preserved by hardware
-or compiler optimizations, for example the program `m[0] = 1; m[1] =
-2;` might be reordered as `m[1] = 2; m[0] = 1;`.  For this reason,
-we define a smaller relation, the *preserved program order*, of program
-reorderings that are guaranteed to be maintained by optimizations.
-
-Note that most non-atomic events can be reordered, with the exception of
-data dependencies and writes to the same location. For example the program
-`x = m[0]; y = m[0]; m[1] = 1; m[1] = x;` has executions of the form:
-
-> `R m[0] = v` ─po→ `R m[0] = w` ─po→ `W m[1] = 1` ─po→ `W m[1] = v`
->
-> `R m[0] = v` ─dd→ `W m[1] = v`  
-
-and so we have preserved program order:
-
-> `R m[0] = v` ─ppo→ `W m[1] = v` ←ppo─ `W m[1] = 1`  
-> `R m[0] = w`
-
-**Definition**: In a thread execution, the *preserved program order* is the relation
-where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
-
-* *d* is a data dependency of *e*,
-* *d* is an atomic read, and *e* is a read,
-* *d* is a write, and *e* is an atomic write,
-* *d* and *e* are events where *d* ←po→ *e*, or
-* *d* and *e* are writes to the same location. ∎
-
-[Should this defn include all atomic events? We have per-byte SC, which
-blocks reorderings of all atomic events.]
-
-Now, given a thread execution for each thread in the program,
+Given a thread execution for each thread in the program,
 we would like to know when they can be combined to form a program
 execution. A *candidate execution* is one where we combine together
-the individual thread executions. For example a candidate execution of the TAR pit is:
-
->  `R m[1] = 1` ─ppo→ `W m[0] = 1`  
->  `R m[0] = 1` ─ppo→ `W m[1] = 1`  
-
-and a candidate execution of the TAR pit companion is:
-
->  `R m[1] = 1` ─ppo→ `W m[0] = 1`  
->  `R m[0] = 1`  
->  `W m[1] = 1`  
+the individual thread executions.
 
 **Definition** Given *n* thread executions define a *candidate program execution* to be
 (*E*, ─hb→, ─rf→) where:
 
-* ─hb→ = (─ppo→ ∪ ─sw→)* is the *happens before* partial order, and
+* ─hb→ = (─po→ ∪ ─sw→)* is the *happens before* partial order, and
 * ←rf─ : *R* → *W* is the *reads from* function,
 
 such that if *c* ─rf→ *e* then:
 
 * *c* has the same location and value as *e*,
-* we do not have (*e* ─hb→ *c*) or (*e* ─po→ *c*),
-* there is no (*c* ─hb→ *d* ─hb→ *e*) or (*c* ─po→ *d* ─po→ *e*) where *d* writes to the same location as *e*,
+* we do not have (*e* ─hb→ *c*), and
+* there is no (*c* ─hb→ *d* ─hb→ *e*) where *d* writes to the same location as *e*,
 
 where we define:
 
 * *E* = (*E*₁ ∪ ⋯ ∪ *Eₙ*) (wlog we assume the *Eᵢ* are disjoint),
 * *A* = (*A*₁ ∪ ⋯ ∪ *Aₙ*),
 * ─dd→ = (─dd→₁ ∪ ⋯ ∪ ─dd→ₙ),
-* ─po→ = (─po→₁ ∪ ⋯ ∪ ─po→ₙ),
-* ─ppo→ = (─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ), and
+* ─po→ = (─po→₁ ∪ ⋯ ∪ ─po→ₙ), and
 * ─sw→ = (─rf→ ∩ (*A* × *A*)). ∎
 
 Some candidate program executions are invalid, however, for three possible reasons:
 tearing, sequential inconsistency, or thin-air read.
 
 We could ban all tearing between all atomic events, by requiring that
-for any atomic *b* ─rf→ *c* and *d* ─rf *e*, we have that if *c* ←hb→
-*d* then *b* ←hb→ *d*. This requirement makes sense in typed
+for any *b* ─sw→ *c* ←at→ *d* ←sw─ *e*, we have *b* ←at→ *d*.
+This requirement makes sense in typed
 languages, but it is too strong a requirement in the presence of
 operations acting on the same location at different data sizes.
 
@@ -289,13 +254,13 @@ sizes, for example using mutexes for accesses larger than one machine
 word.
 
 **Definition** A candidate program execution is *per-range isolated*
-if, whenever *b* ─sw→ *c* ←hb→ *e* ←sw─ *d* and *b*, *c*, *d* and *e*
-all have the same location range, then *b* ←hb→ *d*. ∎
+if, whenever *b* ─sw→ *c* ←at→ *e* ←sw─ *d* and *b*, *c*, *d* and *e*
+all have the same location range, then *b* ←at→ *d*. ∎
 
 Next, consider the classic TAR pit program `m[0] = m[1]; ∥ m[1] = m[0];`,
 which has the candidate execution:
 
->  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1` ─hb→ `W m[1] = 1`
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─dd→ `W m[0] = 1` ─rf→ `R m[0] = 1` ─dd→ `W m[1] = 1`
 
 This execution is considered invalid because the value `1` has come
 from thin air. Allowing such executions breaks invariant reasoning,
@@ -304,14 +269,16 @@ for example type safety.
 However, in the companion program `m[0] = m[1]; ∥ m[1] = 1;`,
 we do want to allow a similar execution:
 
->  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─dd→ `W m[0] = 1` ─rf→ `R m[0] = 1`
 
 The difference between these two executions is that in the TAR pit, we have
-a cycle between ─rf→ and ─hb→, but the matching execution in the companion
-does not have `R m[0] = 1` ─hb→ `W m[1] = 1`, breaking the cycle.
+a cycle between ─rf→ and ─dd→, but the matching execution in the companion
+does not have `R m[0] = 1` ─dd→ `W m[1] = 1`, breaking the cycle.
 
 **Definition** A candidate program execution is *thin-air-read-free* if
-(─hb→ ∪ ─rf→)* is a partial order.
+(─dd→ ∪ ─rf→)* is a partial order.
+
+[Note: can we use dd rather than hb here? Do we need a definition of preserved hb?]
 
 Finally, we want atomic memory accesses to be sequentially consistent.
 For example, in the independent-read independent-write example:
