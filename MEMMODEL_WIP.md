@@ -82,6 +82,8 @@ The *kernel* of a relation ─R→ is the relation ←R→ defined to be
 
 A relation ─R→ is *reflexive* whenever for any *e* we have *e* ─R→ *e*.
 
+A relation ─R→ is *symmetric* whenever *d* ─R→ *e* implies *d* ←R─ *e*.
+
 A relation ─R→ is *transitive* whenever *c* ─R→ *d* ─R→ *e* implies *c* ─R→ *e*.
 
 A relation ─R→ is *antisymmetric* whenever *d* ←R→ *e* implies *d* = *e*.
@@ -94,6 +96,10 @@ A *pre-order* is a reflexive, transitive relation.
 A *partial order* is an antisymmetric pre-order.
 
 A *total order* is a total partial order.
+
+A *partial equivalence* is a symmetric, transitive relation.
+
+An *equivalence* is a total partial equivalence.
 
 ## Host language requirements
 
