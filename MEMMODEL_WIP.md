@@ -172,16 +172,15 @@ but this does not impact the memory model.
 
 ## Memory model
 
-First, we observe that the program order is not observable, for example there is no
-context which can distinguish `m[0] = 1; m[1] = 2;` from ` m[1] = 2; m[0] = 1;`.
-Instead we are interested in a smaller relation, the *preserved program order*.
+First, we observe that the program order is not preserved by hardware
+or compiler optimizations, for example the program `m[0] = 1; m[1] =
+2;` might be reordered as `m[1] = 2; m[0] = 1;`.  For this reason,
+we define a smaller relation, the *preserved program order*, of program
+reorderings that are guaranteed to be maintained by optimizations.
 
 Note that most non-atomic events can be reordered, with the exception of
-data dependencies and writes to the same location. For example the program:
-```
-  x = m[0]; y = m[0]; m[1] = 1; m[1] = x;
-```
-has executions of the form:
+data dependencies and writes to the same location. For example the program
+`x = m[0]; y = m[0]; m[1] = 1; m[1] = x;` has executions of the form:
 
 > `R m[0] = v` ─po→ `R m[0] = w` ─po→ `W m[1] = 1` ─po→ `W m[1] = v`
 >
@@ -199,6 +198,9 @@ where *d* ─ppo→ *e* whenever *d* ─po→ *e* and either:
 * *d* is an atomic read, and *e* is a read,
 * *d* is a write, and *e* is an atomic write, or
 * *d* and *e* are writes to the same location. ∎
+
+[Should this defn include all atomic events? We have per-byte SC, which
+blocks reorderings of all atomic events.]
 
 Now, given a thread execution for each thread in the program,
 we would like to know when they can be combined to form a program
@@ -235,34 +237,105 @@ where we define:
 * ─ppo→ = (─ppo→₁ ∪ ⋯ ∪ ─ppo→ₙ), and
 * ─sw→ = (─rf→ ∩ (*A* × *A*)). ∎
 
-Not all candidate program executions are valid, however, since there may be cycles in (─hb→ ∪ ─rf→).
-For example in the TAR pit candidate execution, we have:
+Some candidate program executions are invalid, however, for three possible reasons:
+tearing, sequential inconsistency, or thin-air read.
 
->  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1` ─hb→ `W m[1] = 1`
+We could ban all tearing between all atomic events, by requiring that
+for any atomic *b* ─rf→ *c* and *d* ─rf *e*, we have that if *c* ←hb→
+*d* then *b* ←hb→ *d*. This requirement makes sense in typed
+languages, but it is too strong a requirement in the presence of
+operations acting on the same location at different data sizes.
 
-but in the TAR pit companion, the cycle is broken:
+For example, consider the program:
+```
+    m[0..7] = [0,0,0,0,0,0,0,0]; m[0..7] = [1,2,3,4,5,6,7,8];
+  ∥ [x,y] = m[2..3];
+```
 
->  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
+All executions include:
 
-**Definition** A candidate program execution is *thin-air-read-free* if
-(─hb→ ∪ ─rf→)* is a partial order.
+> [`W m[0] = 0`, ⋯ , `W m[7] = 0`] ─hb→ [`W m[0] = 1`, ⋯ ,`W m[7] = 8`]  
+> [`R m[2] = v`, `R m[3] = w`]  
 
-[TODO: motivate these defns.]
+and there are executions which do not exhibit tearing, for example reading all zeros:
 
-**Definition** A candidate program execution is *per-byte sequentially consistent* if
-there is a total order ─mo→ ⊆ (*A* × *A*) such that:
+> `W m[2] = 0` ─rf→ `R m[2] = 0`  
+> `W m[3] = 0` ─rf→ `R m[3] = 0`  
 
-* if *d* ─po→ *e* then *d* ─mo→ *e*,
-* if *d* ─rf→ *e* then *d* ─mo→ *e*,
-* if *d* ─rf→ *e* and *c* is an atomic write to the same location as *c* and *d*,
-  then either *c* ─mo→ *d* or *e* ─mo→ *c*. ∎
+or reading no zeros:
+
+> `W m[2] = 3` ─rf→ `R m[2] = 3`  
+> `W m[3] = 4` ─rf→ `R m[3] = 4`  
+
+These executions do not exhibit tearing, since
+every read atom is reading from just one write atom.
+An execution which includes tearing is:
+
+> `W m[2] = 0` ─rf→ `R m[2] = 0`  
+> `W m[3] = 4` ─rf→ `R m[3] = 4`  
+
+This execution would be disallowed by memory models in which all
+atomic accesses use the same synchronization mechanism, in particular
+where all atomic accesses use hardware atomic instructions. However,
+implementations may use different sychronization for different data
+sizes, for example using mutexes for accesses larger than one machine
+word.
 
 **Definition** A candidate program execution is *per-range isolated*
 if, whenever *b* ─sw→ *c* ←hb→ *e* ←sw─ *d* and *b*, *c*, *d* and *e*
 all have the same location range, then *b* ←hb→ *d*. ∎
 
+Next, consider the classic TAR pit program `m[0] = m[1]; ∥ m[1] = m[0];`,
+which has the candidate execution:
+
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1` ─hb→ `W m[1] = 1`
+
+This execution is considered invalid because the value `1` has come
+from thin air. Allowing such executions breaks invariant reasoning,
+for example type safety.
+
+However, in the companion program `m[0] = m[1]; ∥ m[1] = 1;`,
+we do want to allow a similar execution:
+
+>  `W m[1] = 1` ─rf→ `R m[1] = 1` ─hb→ `W m[0] = 1` ─rf→ `R m[0] = 1`
+
+The difference between these two executions is that in the TAR pit, we have
+a cycle between ─rf→ and ─hb→, but the matching execution in the companion
+does not have `R m[0] = 1` ─hb→ `W m[1] = 1`, breaking the cycle.
+
+**Definition** A candidate program execution is *thin-air-read-free* if
+(─hb→ ∪ ─rf→)* is a partial order.
+
+Finally, we want atomic memory accesses to be sequentially consistent.
+For example, in the independent-read independent-write example:
+```
+    m[0..0] = [1];
+  ∥ m[0..0] = [2];
+  ∥ [a] = m[0..0]; [b] = m[0..0];
+  ∥ [c] = m[0..0]; [d] = m[0..0];
+```
+has candidate execution:
+
+> [`W m[0] = 1`]  
+> [`W m[0] = 2`]  
+> [`R m[0] = 1`]₁ ─hb→ [`R m[0] = 2`]₁  
+> [`R m[0] = 2`]₂ ─hb→ [`R m[0] = 1`]₂  
+>
+> [`R m[0] = 1`]₁ ⟵rf─ [`W m[0] = 1`] ─rf→ [`R m[0] = 1`]₂  
+> [`R m[0] = 2`]₁ ⟵rf─ [`W m[0] = 2`] ─rf→ [`R m[0] = 2`]₂  
+
+which is sequentially inconsistent, since there is disagreement
+between the threads about whether the writes happened in the order `1, 2`
+or `2, 1`.
+
+**Definition** A candidate program execution is *per-byte sequentially consistent* if
+there is a total order ─mo→ ⊆ (*A* × *A*) such that:
+
+* if *d* ─hb→ *e* then *d* ─mo→ *e*, and
+* if *c* ─rf→ *e* then there is no (*c* ─mo→ *d* ─mo→ *e*) where *d* writes to the same location as *e*. ∎
+
 **Definition** A *program execution* is a candidate program execution which is
-thin-air-read-free, per-byte sequentially consistent, and per-range isolated.
+per-range isolated, thin-air-read-free and per-byte sequentially consistent.
 
 ## Compilation to and from LLVM or C/C++ atomics
 
