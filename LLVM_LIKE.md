@@ -8,13 +8,15 @@ The memory consistency model (hereinafter "memory model") aims to define the ord
 
 # Model
 
-The memory model describes the allowed orderings of SharedArrayBuffer events (hereinafter "events") and host-provided events (e.g., those arising from `postMessage`). We represent SharedArrayBuffer events as ReadSharedMemory(_order_, _block_, _byteIndex_, _elementSize_) and WriteSharedMemory(_order_, _block_, _byteIndex_, _elementSize_, _bytes_) metafunctions that occur during evaluation. Allowed values for _order_ are `"SeqCst"`, `"Init"`, or `"None"`.
+The memory model describes the allowed orderings of SharedArrayBuffer events (hereinafter "events") and host-provided events (e.g., those arising from `postMessage`). We represent SharedArrayBuffer events as ReadSharedMemory(_order_, _block_, _byteIndex_, _elementSize_) and WriteSharedMemory(_order_, _block_, _byteIndex_, _elementSize_, _bytes_) metafunctions that occur during evaluation. Allowed values for _order_ are `"SeqCst"`, `"Init"` **asaj: do we need a special init order?**`"None"`  **asaj: the LLVM name for this is `"Unodered"`**.
 
-Let the range of an event be the byte locations in the interval [_byteIndex_, _byteIndex_ + _elementSize). We define the following say these ranges are overlapping, equal, subsumed, or disjoint, which mean the usual things. Two events' ranges are disjoint when they do not have the same _block_.
+Let the range of an event be the byte locations in the interval [_byteIndex_, _byteIndex_ + _elementSize_). We define the following say these ranges are overlapping, equal, subsumed, or disjoint, which mean the usual things. Two events' ranges are disjoint when they do not have the same _block_. **asaj: by is e overlapping with e? ditto is e subsumed by e?**
 
 These events are ordered by two relations: happens-before and reads-from, defined mutually recursively as follows.
 
 ### agent-order
+
+**asaj: agent-order is usually called program order**
 
 The total order of SharedArrayBuffer events in a single agent during a particular evaluation of the program.
 
@@ -27,7 +29,7 @@ The least relation between pairs of events such that:
     1. Assert: There is no other WriteSharedMemory event _V_ such that _R_ reads-from _V_.
     1. _R_ synchronizes-with _W_.
   1. Otherwise, if _W_ has _order_ `"Init"` then:
-    1. Let _allInitReads_ be true.
+    1. Let _allInitReads_ be true. **asaj: I don't really understand the special treatment of Init here.**
     1. For each WriteSharedMemory event _V_ such that _R_ reads-from _V_:
       1. If _V_ does not have _order_ `"Init"` then:
         1. Set _allInitReads_ to false.
@@ -53,6 +55,8 @@ The least partial order such that that:
 
 ### reads-bytes-from
 
+**asaj: I found the spec a lot easier to write by defining an auxiliary notion "R reads byte b from m[i]" and ditto W writes byte b to m[i].**
+
 A function from ReadSharedMemory events to a List of WriteSharedMemory events such that:
 
 1. For each ReadSharedMemory event _R_:
@@ -63,6 +67,7 @@ A function from ReadSharedMemory events to a List of WriteSharedMemory events su
     1. It is not the case that _R_ happens-before _W<sub>l</sub>_, and
     1. There is no WriteSharedMemory event _V_ that has _l_ in its range such that _W<sub>l</sub>_ happens-before _V_ and _V_ happens-before _R_.
   1. If _R_ has _order_ `"SeqCst"` and there is an event _W_ in _Ws_ that has _order_ `"SeqCst"` and the same range as _R_ then:
+     **asaj: are these extra requirements necessary? they seem to be implied by sc.**
     1. For each byte location _l_ in _R_'s range:
       1. Let _W<sub>l</sub>_ be the <em>l</em>th event in _Ws_.
       1. _W_ and _W<sub>l</sub>_ are the same event.
@@ -82,13 +87,18 @@ For each byte location _l_ in a _block_, there is a WriteSharedMemory(`"Init"`, 
 
 [[[ This is a start but it's going to be tricky to make this work for us in the context of translating from C++ code, since memory will be recycled without the SAB being freed and reallocated, and we need a way to apply this mechanism to recycled memory.  I wouldn't get hung up on this quite yet but it will be a headache.  There are few solutions here. ]]]
 
+**asaj: not sure why we need a special treatment of memory initialization or reuse.**
+
 ### Races
+
+**asaj: this section seems out of place, as it's not part of the defn of the memory model, it's needed when talking about properties of the model, e.g. SC-DRF.**
 
 Two shared memory events _E<sub>1</sub>_ and _E<sub>2</sub>_ are said to be in a race if all of the following conditions hold.
 
 1. It is not the case that _E<sub>1</sub>_ happens-before _E<sub>2</sub>_ or _E<sub>2</sub>_ happens-before _E<sub>1</sub>_, and
 1. At least one of _E<sub>1</sub>_ or _E<sub>2</sub>_ is a WriteSharedMemory event, and
 1. _E<sub>1</sub>_ and _E<sub>2</sub>_ have overlapping ranges, the same range, or one event's range subsumes the other's.
+**asaj: is this not the same as just "overlapping"? that is, their ranges have a non-empty intersection?**
 
 Two shared memory events _E<sub>1</sub>_ and _E<sub>2</sub>_ are said to be in a data race if they are in a race and additionally, any of the following conditions holds.
 
@@ -110,6 +120,7 @@ Draft Note: This is intentionally underspecified. Precisely capturing and forbid
 ### Sequentially Consistent Atomics
 
 Let the set of viable atomic events be the set of events with _order_ `"SeqCst"` or `"Init"` that are not in a data race with any other event.
+**asaj: why no data race?**
 
 A candidate execution has sequentially consistent atomics if there is a total order memory-order such that:
 
@@ -117,14 +128,16 @@ A candidate execution has sequentially consistent atomics if there is a total or
   1. If _E<sub>1</sub>_ happens-before _E<sub>2</sub>_ then:
     1. _E<sub>1</sub>_ is memory-order before _E<sub>2</sub>_.
   1. If _E<sub>1</sub>_ is a ReadSharedMemory event _R_ and _E<sub>2</sub>_ is a WriteSharedMemory event _W_ such that _R_ reads-from _W_ then:
+    **asaj: if we replace reads-from by synchronizes with, I think we can drop "viable".**
     1. Assert: _R_ has _order_ `"SeqCst"`.
     1. There is no WriteSharedMemory event _V_ with the same range as _R_ such that _R_ is memory-order before _V_ and _V_ is memory-order before _W_.
   1. If _E<sub>1</sub>_ is a ReadSharedMemory event _R_ and _E<sub>2</sub>_ is a WriteSharedMemory event _W_ such that _R_ and _W_ are introduced by a single read-modify-write API call (e.g., `Atomics.compareExchange`) then:
     1. Assert: _R_ and _W_ have _order_ `"SeqCst"`.
     1. _R_ is memory-order before _W_, and
     1. There is no event _E_ such that _R_ is memory-order before _E_ and _E_ is memory-order before _W_.
-
-NOTE: There is no total memory ordering for all events with _order_ `"SeqCst"`. Executions do not require that racing `"SeqCst"` events with overlapping ranges (i.e., those that participate in a data race) be totally ordered.
+    **asaj: this requires a notion of "introduced by a single read-modify-write API call", which is rather informal. RMW events might be a simpler way to handle this?**
+    
+NOTE: There is no total memory ordering for all events with _order_ `"SeqCst"`. Executions do not require that racing `"SeqCst"` events with overlapping ranges (i.e., those that participate in a data race) be totally ordered. **asaj: This is weaker than LLVM, I think we'll have problems making SAB an LLVM back end if we adopt this.**
 
 ### Valid Executions
 
