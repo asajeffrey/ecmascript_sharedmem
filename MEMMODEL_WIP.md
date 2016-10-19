@@ -260,10 +260,40 @@ if we change the example to use a single atomic read:
 the execution becomes possible, since the two-byte reads may be using a different
 synchronization mechanism than the one-byte writes.
 
+This is modeled by asking for a total order ─sc→ on atomic events, such that
+an atomic read is guaranteed to read the most recent matching atomic write,
+if there is one. For example, the IRIW program above has:
+
+> `atomic W m[0] = 0x00` ─hb→ `atomic W m[0] = 0xFF`  
+> `atomic W m[1] = 0x00` ─hb→ `atomic W m[1] = 0xFF`  
+> `atomic R m[0] = 0xFF` ─hb→ `atomic R m[1] = 0x00`  
+> `atomic R m[1] = 0xFF` ─hb→ `atomic R m[0] = 0x00`  
+>
+> `atomic W m[0] = 0x00` ─sw→ `atomic R m[0] = 0x00`  
+> `atomic W m[0] = 0xFF` ─sw→ `atomic R m[0] = 0xFF`  
+> `atomic W m[1] = 0x00` ─sw→ `atomic R m[1] = 0x00`  
+> `atomic W m[1] = 0xFF` ─sw→ `atomic R m[1] = 0xFF`  
+
+but there is no way to provide an appropriate total order for this execution.
+In contrast, the mixed-size IRIW program has:
+
+> `atomic W m[0] = 0x00` ─hb→ `atomic W m[0] = 0xFF`  
+> `atomic W m[1] = 0x00` ─hb→ `atomic W m[1] = 0xFF`  
+> `atomic R m[0..1] = 0xFF00`  
+> `atomic R m[0..1] = 0x00FF`  
+>
+> `atomic W m[0..1] = 0x00FF` ─rf→ `atomic R m[0] = 0x00`  
+> `atomic W m[0..1] = 0xFF00` ─rf→ `atomic R m[0] = 0xFF`  
+> `atomic W m[0..1] = 0x00FF` ─rf→ `atomic R m[1] = 0x00`  
+> `atomic W m[0..1] = 0xFF00` ─rf→ `atomic R m[1] = 0xFF`  
+
+Since the execution has ─rf→ rather than ─sw→ edges, any total order
+compatible with ─hb→ will suffice.
+
 **Definition** A candidate program execution is *per-address-range sequentially consistent* if
 there is a total order on atomic events ─sc→ such that:
 
-* if *d* ─hb→ *e* then *d* ─sc→ *e*,
+* if *d* and *e* are atomic events and *d* ─hb→ *e* then *d* ─sc→ *e*,
 * if *c* ─sw→ *e* then there is no (*c* ─sc→ *d* ─sc→ *e*) where *d* is a write event with the same address range as *e*. ∎
 
 **Conjecture** If a candidate program execution is per-address-range sequentially consistent,
