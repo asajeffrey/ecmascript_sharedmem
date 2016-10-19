@@ -364,6 +364,46 @@ In the (hopefully unlikely) case that a program is
 compiled from C to ECMAScript to C to ECMAScript to C, every memory
 access in the original program will become sequentially consistent.
 
+## SC-DRF
+
+So far, there have been no constraints on the ─dd→ relation,
+implementors are free to choose any relation, including the empty
+one. We now show how, assuming some constraints on ─dd→, we can
+establish the *SC-DRF* theorem, which allows programmers to reason
+about appropriately sychronized programs as if they were sequentially
+consistent.
+
+**Definition** A program execution is *sequentially consistent* if
+there is a total order ─sc→ ⊇ ─hb→ where,
+for any event *e* which reads byte `b` from `m[i]`,
+there is an event *c* ─rf→ *e* which writes byte `b` to `m[i]` such that:
+
+* we do not have *c* ─sc→ *e*, and
+* there is no event *d* which writes to `m[i]` such that *c* ─sc→ *d* ─sc→ *e*. ∎
+
+**Definition** Events *d* and *e* are *concurrent* if we do not have *d* ─hb→ *e*
+or *e* ─hb→ *d*. ∎
+
+**Definition** A program execution has a *write-write conflict* if
+there are concurrent *d* and *e* which both write to `m[i]`. ∎
+
+**Definition** A program execution has a *read-write conflict* if
+there is are concurrent *d* which writes to `m[i]` and *e* which reads
+from `m[i]`. ∎
+
+**Definition** A program execution is *data-race-free* if
+it has no write-write or read-write conflicts. ∎
+
+**Definition** A program is *dd-sound* if, for any thread execution
+(*c*₀ ─po→ *c*ᵢ ─po→ *d* ─po→ *e*₀ ─po→ *e*ⱼ) where *d* has label
+`R m[i..j] = v`, and there is no *e*ₖ where *d* ─dd→ eₖ,
+then for any `v′` there is a thread execution
+(*c*₀ ─po→ *c*ᵢ ─po→ *d′* ─po→ *e*₀ ─po→ *e*ⱼ) where *d′* has label
+`R m[i..j] = v′`. ∎
+
+**Conjecture (SC-DRF)** In a dd-sound program where every sequentially consistent executiuon
+is data-race-free, every execution is sequentially consistent. ∎
+
 ## TODO
 
 Still to do:
