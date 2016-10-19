@@ -394,14 +394,14 @@ from `m[i]`. ∎
 **Definition** A program execution is *data-race-free* if
 it has no write-write or read-write conflicts. ∎
 
-**Definition** A program is *dd-sound* if, for any thread execution
-(*c*₀ ─po→ *c*ᵢ ─po→ *d* ─po→ *e*₀ ─po→ *e*ⱼ) where *d* has label
-`R m[i..j] = v`, and there is no *e*ₖ where *d* ─dd→ eₖ,
-then for any `v′` there is a thread execution
-(*c*₀ ─po→ *c*ᵢ ─po→ *d′* ─po→ *e*₀ ─po→ *e*ⱼ) where *d′* has label
-`R m[i..j] = v′`. ∎
+**Definition** A program is *dd-sound* whenever,
+for any thread execution (*c̅* ─po→ *d* ─po→ *e̅*)
+where *d* reads `v` from `m[i..j]` and there is no *e* ∈ *e̅*  where *d* ─dd→ e,
+and for any `v′`,
+there is a thread execution (*c̅* ─po→ *d′* ─po→ *e̅*)
+where *d′* reads `v′` from `m[i..j]`. ∎
 
-**Conjecture (SC-DRF)** In a dd-sound program where every sequentially consistent executiuon
+**Conjecture (SC-DRF)** In a dd-sound program where every sequentially consistent execution
 is data-race-free, every execution is sequentially consistent. ∎
 
 ## TODO
