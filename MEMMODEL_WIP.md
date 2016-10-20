@@ -155,6 +155,11 @@ and an execution of `atomic incr(m[0..1]);`
 * ─po→ ⊆ (*E* × *E*) is the *program order* total order,
 * ─dd→ ⊆ ─po→ is the *data dependency* relation,
 
+such that:
+
+* if *d* ─po→ *e* and *d* is an atomic read, then *d* ─dd→ *e*,
+* if *d* ─po→ *e* and *e* is an atomic write, then *d* ─dd→ *e*.
+
 Define:
 
 * *e* is a *read event* whenever λ(*e*) is a read action,
@@ -394,15 +399,94 @@ from `m[i]`. ∎
 **Definition** A program execution is *data-race-free* if
 it has no write-write or read-write conflicts. ∎
 
-**Definition** A program is *dd-sound* whenever,
-for any thread execution (*c̅* ─po→ *d* ─po→ *e̅*)
-where *d* reads `v` from `m[i..j]` and there is no *e* ∈ *e̅*  where *d* ─dd→ e,
-and for any `v′`,
-there is a thread execution (*c̅* ─po→ *d′* ─po→ *e̅*)
-where *d′* reads `v′` from `m[i..j]`. ∎
+The rest of this section is devoted to giving a sound condition
+on programs (and in particular their dd relation) to prove SC-DRF.
+We start with some definitions.
 
-**Conjecture (SC-DRF)** In a dd-sound program where every sequentially consistent execution
-is data-race-free, every execution is sequentially consistent. ∎
+**Definition** In a program execution *E*,
+
+* a set *D* ⊆ *E* is *dd-closed* whenever *d* ─dd→ *e* ∈ *D* implies *d* ∈ *D*,
+* a set *D* ⊆ *E* is *rf-closed* whenever *d* ─rf→ *e* ∈ *D* implies *d* ∈ *D*,
+* a set *D* ⊆ *E* is *rf-hb* whenever *d* ─rf→ *e* ∈ *D* implies *d* ─hb→ *e*, and
+* let dd(*e*) be the set { *d* | *d* ─dd→ *e* }. ∎
+
+**Lemma** In any dd- and rf-closed *D* ⊆ *E*,
+if *d* ─hb→ *e* ∈ *D* then either
+*d* ∈ *D* or *d* ─po→ *e*.
+
+**Proof** An induction on the definition of hb, with cases:
+
+1. *d* ─po→ *e*: as required.
+
+2. *d* ─po→ *b* ─sw→ *c* ─po→ e*: since *c* is an atomic read,
+  *c* ─dd→ e*, so since *D* is dd-closed *c* ∈ *D*,
+  so since *D* is rf-closed *b* ∈ *D*, so by induction
+  either *d* ∈ *D* or *d* ─po→ *b*. If *d* ─po→ *b*
+  then, since *b* is an atomic write, *d* ─dd→ *b*,
+  and hence *d* ∈ *D* as required. ∎
+
+We can now state the requirements for our proof of SC-DRF.
+
+**Definition** A program is *dd-sound* whenever,
+for any execution *E*
+and dd-closed *D* ⊆ *E*,
+we can find an execution *E′*
+such that *D* ⊆ *E′*
+and for any *d′* ─rf′→ *e′*,
+either *e′* ∈ *D*
+or *d′* ─hb′→ *e′*. ∎
+
+**Definition** A program is *dd-deterministic* whenever,
+for any executions *E* and *E′*
+with *E* ⊇ *D* ⊆ *E′*,
+if *e* ∈ *E* and dd(*e*) ⊆ *D*
+then there exists *e′* ∈ *E′* and dd(*e*) = dd′(*e′*),
+where *e* has the same address range as *e′*, and comes from the same thread. ∎
+
+**Theorem (SC-DRF)** In a dd-sound, dd-deterministic program
+where every sequentially consistent execution is data-race-free,
+every execution is sequentially consistent.
+
+**Proof** Let *E* be a program execution. We show by induction on cardinality
+that for any *D* ⊆ *E*, if *D* is rf- and dd-closed, then *D* is rf-hb.
+In particular, *E* is rf-hb, and hence sequentially consistent.
+
+The interesting case is when the cardinality of *D* is α+1.
+Since *E* is thin-air-read-free we can find *D* = *C* ∪ {e} such that
+*C* is rf- and dd-closed, and hence by induction is rf-hb.
+To show that *D* is rf-hb, we have to show that if *d* ─rf→ *e*
+then *d* ─hb→ *e*.
+
+Since the program is dd-sound, we can find an rf-hb *E′* such that *C* ⊆ *E′*.
+Since *E′* is rf-hb, it is SC, and hence by hypothesis it is DRF.
+
+Now, since the program is dd-deterministic, we can find an *e′* ∈ *E′*
+with the same address range as *e* and from the same thread,
+where dd(*e*) = dd′(*e′*). Since *E′* is rf-hb we must be able to find
+*d′* which overlaps with *d* such that *d′* ─rf′→ *e′* and *d′* ─hb′→ *e′*. Since
+*E′* is DRF and *d* is a write which overlaps with *e′*,
+they must be related by ─hb′→, and so we have two cases:
+
+1. *d* ─hb′→ *e′*: by the definition of hb, we have cases:
+
+  a. *d* ─hb′→ *b′* ─sw′→ *c′* ─po′→ *e′*:
+     since *b′* ─sw′→ *c′*, we must have that *c′* is an atomic read,
+     hence *c′* ─dd′→ *e′*, and so *c′* ─dd→ *e*, and so
+     *d* ─hb→ *e*,
+
+  b. *d* ─po′→ *e′*: since *d* and *e′* come from the same thread,
+     so must *d* and *e*, so since *d* ─rf→ *e*, we must have *d* ─po→ *e*,
+     and so *d* ─hb→ *e*,
+
+2. *e′* ─hb′→ *d*: by the lemma, we have cases:
+
+  a. *e′* ∈ *C* which is a contradiction,
+
+  b. *e′* ─po′→ *d*: since *d* and *e′* come from the same thread,
+     so must *d* and *e*, so since *d* ─rf→ *e*, we must have *d* ─po→ *e*,
+     and so *d* ─hb→ *e*.
+
+In any case, we have *d* ─hb→ *e* as required. ∎
 
 ## TODO
 
@@ -410,4 +494,3 @@ Still to do:
 
 * Give semantics for the shared arrays API in terms of events.
 * Give semantics for other inter-thread communication mechanisms such as message channels.
-* Formalize the non-interference property for dd, and show SC-DRF.
